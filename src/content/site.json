@@ -6,14 +6,14 @@
   },
   "hero": {
     "tag": "Game Designer · 3D Artist",
-    "title": "I make games —\nand the characters\nwho live in them.",
+    "title": "I make games\nand the characters\nwho live in them.",
     "intro": "หนูชื่อธัญโย นักเรียน ม.6 ที่สื่อสารผ่านเกม — ออกแบบระบบและบรรยากาศใน Unity ปั้นโมเดล 3D ใน Blender วาดและ rig ตัวละคร Live2D และออกแบบตัวละครจนผลิตเป็น Art Toy",
     "primary": "ดูผลงาน",
     "secondary": "เปิด 3D Studio"
   },
   "sections": {
     "works": {
-      "eyebrow": "Selected work",
+      "eyebrow": "SELECTED WORK",
       "title": "ผลงาน",
       "intro": ""
     },
