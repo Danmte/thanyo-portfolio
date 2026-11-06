@@ -5,7 +5,6 @@ import { useSite } from '../content/store'
 import { EditBar, EditBlock, FormDrawer, T } from '../content/Editable'
 import { Icon } from './Icon'
 import { toggleMute, useMuted } from '../lib/sfx'
-import { getToken } from '../lib/github'
 
 export function scrollToSection(id: string) {
   const el = document.getElementById(id)
@@ -14,8 +13,9 @@ export function scrollToSection(id: string) {
 }
 
 const links = [['works', 'ผลงาน'], ['studio', '3D Studio'], ['gallery', 'Gallery'], ['about', 'About']] as const
-/** The editor is offered while developing (npm run dev), when the URL has ?edit, or once GitHub is connected on this device */
-const editorAvailable = import.meta.env.DEV || new URLSearchParams(window.location.search).has('edit') || !!getToken()
+/** The editor is offered only while developing (npm run dev) or on the editor link (…/?edit).
+ *  The plain link is always read-only, even on a device that has a GitHub token saved. */
+const editorAvailable = import.meta.env.DEV || new URLSearchParams(window.location.search).has('edit')
 
 export function Layout({ children }: { children: ReactNode }) {
   const { site, edit, setEdit } = useSite()
