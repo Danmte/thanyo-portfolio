@@ -1,37 +1,37 @@
-# THANYO — Game-style Portfolio (Neon Archive)
+# THANYO — Portfolio
 
-เว็บพอร์ตที่เล่นเหมือนเกม: Title → Menu (โลก 3D) → GAMES / MODELS / GALLERY / STATUS
+เว็บพอร์ตแบบเลื่อนลง (ตามดีไซน์ Figma "Web — THANYO Studio"): Hero + ผลงาน + 3D Studio (โมเดลจริงหมุนได้) + Gallery + About + ติดต่อ
+และหน้า `/studio` สำหรับดูโมเดลแบบเต็มจอ
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev      # http://localhost:5173  ← แก้เว็บได้จากในเบราว์เซอร์
 npm run build    # ไฟล์เว็บอยู่ใน dist/ เอาไปขึ้น GitHub Pages / Netlify / itch.io ได้
 ```
 
-## หน้าต่าง ๆ
-| Route | หน้า |
-|---|---|
-| `/` | Title — โถงจอ 3D กล้องอยู่หลังตัวละคร กดปุ่มอะไรก็ได้ กล้องจะหมุนมาด้านหน้า |
-| `/menu` | เมนูหลัก 3D — ลากเมาส์มองรอบ ๆ, ↑↓ เลือก, Enter เข้า |
-| `/projects` | GAMES — การ์ดเกม + ข้อมูลจาก Obsidian vault |
-| `/characters` | MODELS — viewer โมเดล (flat), timeline, wireframe |
-| `/gallery` | ARCHIVE — งานภาพจริง |
-| `/profile` | DOSSIER — แฟ้มประวัติ |
+## แก้เว็บเองในเบราว์เซอร์
+1. `npm run dev` แล้วเปิด http://localhost:5173
+2. กด **แก้ไขเว็บ** มุมขวาบน
+   - **ข้อความ**: คลิกที่ข้อความ (มีเส้นประ) แล้วพิมพ์ได้เลย
+   - **รูป**: กดปุ่ม **เปลี่ยนรูป** บนรูป
+   - **ผลงาน / ภาพ / โมเดล**: ปุ่ม **แก้ไข** บนการ์ด → แก้ทุกช่อง, เพิ่มรูปหลายรูป, ลิงก์วิดีโอ, ↑↓ เรียงลำดับ, 🗑 ลบ
+   - **เพิ่มใหม่**: ปุ่ม **+ เพิ่มผลงาน** / **+ เพิ่มภาพ** / **+ เพิ่มโมเดล** (อัปโหลดไฟล์ `.glb` ได้ในฟอร์ม)
+   - **About / ช่องทางติดต่อ**: ปุ่ม **แก้ไขข้อมูล About ทั้งหมด** / **แก้ไขช่องทางติดต่อ**
+3. กด **บันทึก** ที่แถบล่าง → เขียนลง `src/content/site.json` (สำรองไฟล์เก่า 10 ชุดใน `.cms-backup/`)
+   ไฟล์ที่อัปโหลดไปอยู่ใน `public/media/uploads/` และ `public/models/uploads/`
 
-## แก้เนื้อหา (ไม่ต้องแตะ UI)
-| อยากแก้ | ไฟล์ | สื่อ |
-|---|---|---|
-| ชื่อ สกิล ลิงก์ | `src/data/profile.ts` | `public/art/` |
-| เกม | `src/data/projects.ts` | `public/projects/` (ตอนนี้เป็น title card จาก Figma) |
-| โมเดล | `src/data/characters.ts` | `public/models/*.glb` |
-| ภาพวาด | `src/data/artworks.ts` | `public/art/gallery/` |
+ยังไม่ได้บันทึกก็ไม่หาย (เก็บเป็น draft ในเบราว์เซอร์) · บนเว็บที่ build แล้วเปิด `?edit` ได้ แต่จะบันทึกเป็นการดาวน์โหลด `site.json` แทน (เว็บ static ไม่มีเซิร์ฟเวอร์ให้เขียนไฟล์)
 
-ช่องที่ยังไม่รู้ข้อมูลจริงเขียน `TODO` ไว้ในไฟล์ data
+## โมเดล 3D
+- ทุกโมเดลแสดงแบบ flat (ไม่มีแสง)
+- ช่อง `clips` = ท่าที่โชว์ ตามลำดับ · `T-Pose` คือท่ายืนตั้งต้นของ rig (สร้างจากไฟล์ ไม่ต้อง export แยก) · ว่าง = ทุกท่าในไฟล์
+- Undertaker: `T-Pose` + `Horse Catwalk`
 
 ## ไฟล์สำคัญ
-- `src/components/MenuScene.tsx` — โลก 3D ของ title/menu (จอ, hologram shader, คริสตัล, วงแหวน, bloom)
-- `src/components/CharacterStage.tsx` — viewer โมเดล + `toFlat()` (ทำให้ 3D เป็น flat)
-- `src/lib/sfx.ts` — เสียง UI + ambient (สังเคราะห์ด้วย WebAudio)
-- `src/index.css` — ธีม (สีอยู่ใน `:root`)
+- `src/content/site.json` — เนื้อหาทั้งเว็บ (ผลงาน, รูป, โมเดล, About, ติดต่อ)
+- `src/content/store.tsx` · `Editable.tsx` — ระบบแก้ไขในเว็บ · `cms.plugin.ts` — endpoint บันทึก/อัปโหลด (เฉพาะ `npm run dev`)
+- `src/pages/Home.tsx` · `Work.tsx` · `Studio.tsx` — หน้าเว็บ
+- `src/components/Viewport.tsx` — ฉาก 3D + `toFlat()` + ท่า T-Pose · `StudioView.tsx` — viewer ในหน้าเว็บ
+- `src/index.css` — สี/ฟอนต์ (ตรงกับ Figma variables "Studio Web")
 
 วิธี export โมเดลจาก Blender ให้เล็กพอสำหรับเว็บ: Obsidian `knowledge/modeling/glb-web-export`

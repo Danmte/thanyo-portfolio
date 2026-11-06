@@ -1,0 +1,759 @@
+{
+  "site": {
+    "name": "THANYO",
+    "sub": "Studio",
+    "role": "Game Designer · 3D Artist"
+  },
+  "hero": {
+    "tag": "Game Designer · 3D Artist",
+    "title": "I make games —\nand the characters\nwho live in them.",
+    "intro": "หนูชื่อธัญโย นักเรียน ม.6 ที่สื่อสารผ่านเกม — ออกแบบระบบและบรรยากาศใน Unity ปั้นโมเดล 3D ใน Blender วาดและ rig ตัวละคร Live2D และออกแบบตัวละครจนผลิตเป็น Art Toy",
+    "primary": "ดูผลงาน",
+    "secondary": "เปิด 3D Studio"
+  },
+  "sections": {
+    "works": {
+      "eyebrow": "Selected work",
+      "title": "ผลงาน",
+      "intro": ""
+    },
+    "studio": {
+      "eyebrow": "Interactive",
+      "title": "3D Studio",
+      "intro": "หมุน ซูม และเล่นแอนิเมชันของโมเดลจริงได้ในเบราว์เซอร์ — ทุกโมเดลแสดงแบบ flat (ไม่มีแสง) ให้เห็นงานเท็กซ์เจอร์ตรง ๆ"
+    },
+    "gallery": {
+      "eyebrow": "Artwork",
+      "title": "Gallery",
+      "intro": ""
+    },
+    "about": {
+      "eyebrow": "About",
+      "title": "สวัสดี หนูชื่อธัญโย"
+    },
+    "contact": {
+      "eyebrow": "Contact",
+      "title": "อยากดูผลงานเพิ่ม\nหรือคุยงานกัน?"
+    }
+  },
+  "works": [
+    {
+      "id": "trust-me-bro",
+      "number": "01",
+      "title": "Trust Me, Bro",
+      "subtitle": "ผลงานที่ 01 Game Development “อาการหนักนะพี่”",
+      "status": "Game jam",
+      "tone": "amber",
+      "genre": "3D First-person Shop Sim",
+      "duration": "27/10 - 06/11 2569",
+      "role": "Design · 3D · UI · Code",
+      "team": "3 คน",
+      "summary": "Game Jam ทีม 3 คน 11 วัน ไอเดียตั้งต้นของพี่นะโมคือเกมประกอบคอมที่เกรียนลูกค้าได้ ส่วนหนูออกแบบว่าเกมจะหน้าตาและเล่นยังไง ทั้ง UI ภาพ มุมกล้อง ระบบ ตอนประกอบคอม และความกาวทั้งหมด ปั้นโมเดล 3D กว่า 70 ชิ้นใน Blender โดยมีเอไอช่วยเขียนระบบด้วย C# ตอนแรกโค้ดรวมเป็นก้อน พอระบบเยอะขึ้นจึงแยก Class แบบ OOP ทีหลัง",
+      "cover": "media/trust-1.webp",
+      "images": [
+        "media/trust-1.webp",
+        "media/trust-2.webp",
+        "media/trust-3.webp",
+        "media/trust-4.webp"
+      ],
+      "video": "",
+      "software": [
+        "Unity 6",
+        "Blender",
+        "C#",
+        "Figma",
+        "Photoshop",
+        "Git"
+      ],
+      "points": [
+        {
+          "title": "ระบบ Interact (กด E)",
+          "code": "«interface» IInteractable\n+ Prompt : string\n+ Interact(user)",
+          "body": "ทุกอย่างที่กด E ได้ implement IInteractable ที่มี Prompt กับ Interact() ตัว PlayerInteractor แค่ยิง Raycast แล้วเรียก Interact() ไม่ต้องรู้ว่าตรงหน้าเป็นลูกค้า วัว หรือประตูมิติ ของแต่ละชิ้นตอบสนองยังไงก็เขียนไว้ในคลาสของมันเอง"
+        },
+        {
+          "title": "ระบบเงินและความพึงพอใจ",
+          "code": "ShopWallet\n- money, satisfaction\n+ TrySpend(amount) : bool\n+ event Changed",
+          "body": "เงินกับความพึงพอใจถูกห่อไว้ใน ShopWallet ระบบอื่นแก้ค่าตรง ๆ ไม่ได้ ต้องผ่าน TrySpend() ที่เช็กก่อนว่าเงินพอไหม เวลาค่าเปลี่ยนจะยิง event Changed ให้ UI และสรุปวันอัปเดตเอง ไม่ต้องวนเช็กทุกเฟรม"
+        },
+        {
+          "title": "ชิ้นส่วน และระบบของก๊อป",
+          "code": "«ScriptableObject» PartCatalog\n▼ Knockoffs.Make(genuine, rarity)",
+          "body": "ข้อมูลชิ้นส่วนเก็บใน ScriptableObject แยกจากโค้ด เพิ่มของใหม่ได้โดยไม่แตะสคริปต์ ของก๊อปสร้างจากของแท้ด้วย Knockoffs.Make() ป้ายบอกสเปกเท่าของจริง แต่ realPerformance ต่ำกว่า และมี catchChance ที่ลูกค้าจะจับได้"
+        },
+        {
+          "title": "โต๊ะประกอบ IoT",
+          "code": "Blender + Python → IoT_Kit.fbx\n▼ IoTBench",
+          "body": "ปั้นชิ้นส่วนวงจรกว่า 60 ชิ้นด้วยสคริปต์ Python ใน Blender ชื่อชิปและชื่อขาตรงกับของจริง export เป็น FBX ไฟล์เดียวให้ IoTBench ดึงไปใช้ตามชื่อ ผู้เล่นคลายน็อต ใส่ชิ้นส่วน 5 ช่อง แล้วกดทดสอบ ใส่ผิดเครื่องพังพร้อมบอกเหตุผล"
+        }
+      ]
+    },
+    {
+      "id": "chibi-baabaa",
+      "number": "02",
+      "title": "Chibi BaaBaa v1.0",
+      "subtitle": "ผลงานที่ 02 Live2D “โมเดลจิบิขยับตามหน้าที่แต่งได้เอง”",
+      "status": "Released",
+      "tone": "green",
+      "genre": "Live2D Model",
+      "duration": "10 วันตั้งแต่เริ่มเรียนรู้",
+      "role": "วาด · Rig · ขาย",
+      "team": "เดี่ยว (งานส่วนตัว)",
+      "summary": "โมเดล Live2D จิบิที่หนูวาดและ rig เองทั้งตัว จุดเด่นคือโหมด Custom ที่ผู้ซื้อแต่งตัวละครได้เองผ่าน parameter ทั้งสีผิว ทรงตา สีตา ผม หู เขา และแต่งหน้า โดยไม่มีช่องทางไหนที่สอนเกี่ยวกับการ custom เลยคิดโครงสร้างทั้งหมดเอง แล้วเปิดขายจริงพร้อมสิทธิ์ใช้งานเชิงพาณิชย์",
+      "cover": "media/chibi-1.webp",
+      "images": [
+        "media/chibi-1.webp",
+        "media/chibi-2.webp",
+        "media/chibi-3.webp"
+      ],
+      "video": "https://www.youtube.com/watch?v=enud5hw2TVw",
+      "software": [
+        "Live2D",
+        "Photoshop"
+      ],
+      "points": [
+        {
+          "title": "ระบบสี Color · Shade · Tint",
+          "code": "«Parameter Group» Eyes\nEyeColorR : palette\nShade : 0 → 1 · Tint : 0 → 1",
+          "body": "ทุกกลุ่มที่แต่งได้ (Skin & Face, Eyes, Ears & Horns, Hair) ใช้ parameter ชุดเดียวกัน 3 ตัว Color มี keyform หลายสิบจุดเป็น palette สี Shade คุมเงา Tint คุมโทนสี โมเดลฐานวาดเป็นสีขาวเทา ให้สีทั้งหมดมาจาก parameter"
+        },
+        {
+          "title": "เลือกทรงได้ทุกส่วน",
+          "code": "Eyes Shape\nkey 0 · 1 · 2 · 3 = 4 ทรง",
+          "body": "ทรงตา ผมหน้า ผมหลัง ผมข้าง หาง หู เขา และ Facial_Details เป็น parameter แบบเลือกตัวเลือก แต่ละ keyform คือหนึ่งทรง มี slideY ไว้เลื่อนผมให้เข้ากับหัว ส่วนแต่งหน้าและ FE1–6 เป็นสวิตช์เปิดปิด"
+        },
+        {
+          "title": "แยกซ้ายขวา + แยกระบบขยับ",
+          "code": "«R / L» EyeColorR ≠ EyeColorL",
+          "body": "ตา ตาขาว ขนตา หาง และเขา แยก parameter ซ้ายขวา ทำตาสองสีได้ ส่วน parameter ที่ใช้ขยับอยู่ในกลุ่ม System แยกจากกลุ่มแต่งตัว แต่งแบบไหนก็ยังหันหัว กะพริบตา ยิ้มได้เหมือนเดิม"
+        },
+        {
+          "title": "Physics ผมและของบนหัว",
+          "code": "Angle X · Z · Breath → Physics\n▼ Pendulum 3 ข้อ",
+          "body": "ตั้ง physics 5 กลุ่ม แยกแกน X กับ Y ทั้งผม (HairPX, HairPY) และของบนหัว (HeadWearPX, HeadWearPY) รับค่าจาก Angle X, Z และ Breath ส่งเข้าลูกตุ้ม 3 ข้อให้แกว่งตามหัวอย่างเป็นธรรมชาติ และมีกลุ่ม eye p แยกไว้สำหรับดวงตา"
+        }
+      ]
+    },
+    {
+      "id": "blurred-room",
+      "number": "03",
+      "title": "The Blurred Room",
+      "subtitle": "ผลงานที่ 03 Unity “เกมผีหอพักไทย เปิดประตูผิดคน = จบ”",
+      "status": "In development",
+      "tone": "blue",
+      "genre": "Horror Game",
+      "duration": "ใช้เวลา dev 2-3 วัน",
+      "role": "ออกแบบ · ซีน · เสียง",
+      "team": "ทีม 3 คน",
+      "summary": "เกมสยองขวัญไทยมุมมองบุคคลที่หนึ่งใน Unity ทำเป็นทีม 3 คน กลางวันเคาะประตูสัมภาษณ์ผู้เช่า กลางคืนต้องฟังเสียงเคาะและส่องตาแมวก่อนเลือกว่าจะเปิดไหม หนูออกแบบระบบกับบรรยากาศในซีนของหนู หาและตัดเสียงเอง และใช้ AI (Claude) ช่วยเขียนสคริปต์ C# ตามที่ออกแบบ",
+      "cover": "media/blurred-1.webp",
+      "images": [
+        "media/blurred-1.webp",
+        "media/blurred-2.webp",
+        "media/blurred-3.webp"
+      ],
+      "video": "https://www.youtube.com/watch?v=enud5hw2TVw",
+      "software": [
+        "Unity",
+        "Photoshop"
+      ],
+      "points": [
+        {
+          "title": "ระบบเคาะประตู RoomKnock",
+          "code": "«Door · Locked» RoomKnock\nE → LockedAttempt · knock × 3",
+          "body": "ประตูห้องที่ล็อก กด E แล้วกลายเป็นการเคาะ สคริปต์ดูว่าเป็นห้องแบบไหน ห้องผู้เช่าจะเปิดประตูแล้วตัวละครเดินออกมาด้วย Animator (Walk) คุยจบเดินกลับ ห้องคนหายประตูเปิดเอง ไฟรอบๆ กะพริบ มีเสียงหลอน แล้วสติลด"
+        },
+        {
+          "title": "คืนแรกเล่นเป็นขั้น (Step)",
+          "code": "NightDemo.Step\nid · checkpoint · event",
+          "body": "คืนแรกแบ่งเป็น Step เรียงใน Inspector แต่ละขั้นมี UnityEvent onBegin / onComplete ต่อกับสวิตช์ไฟ เทป เบรกเกอร์ ขั้นที่ติ๊ก checkpoint คือจุดเกิดใหม่ ฉากฝนตั้งเสียงกับจังหวะเคาะเป็น Beat"
+        },
+        {
+          "title": "กล้อง VHS + หมอก ฝุ่น",
+          "code": "«URP Volume» Camcorder · NightVision",
+          "body": "ใช้ Post-processing ของ URP (Volume) ทำโทน night vision ด้วย ChannelMixer ใส่ grain กับ vignette แบบเทปเก่า หมอกเป็นแผ่นภาพควันใช้ shader Particles Simple Lit ให้รับแสงในฉาก ฝุ่นเป็น ParticleSystem"
+        },
+        {
+          "title": "เสียงพากย์ทุกบทพูด VoiceBank",
+          "code": "ShowSubtitle() → Voice\n▼ VoiceBank (ScriptableObject)",
+          "body": "ซับไตเติลทุกบรรทัดผ่าน GameHUD แล้วถาม VoiceBank (ScriptableObject) ว่ามีไฟล์เสียงไหม ถ้ามีก็เล่นแล้วให้ซับค้างจนพูดจบ มี Custom Editor ให้ลากไฟล์เสียงใส่ทีละบรรทัด หรือลากหลายไฟล์ใส่ทั้งกลุ่มทีเดียว"
+        }
+      ]
+    },
+    {
+      "id": "plai-chiar",
+      "number": "04",
+      "title": "ปลายเชียร",
+      "subtitle": "Character Design · Sketch · Art Toy",
+      "status": "Art toy",
+      "tone": "violet",
+      "genre": "Chibi BaaBaa · Art Toy Character",
+      "duration": "",
+      "role": "ออกแบบตัวละคร · กล่อง · การ์ด",
+      "team": "",
+      "summary": "หญิงสาวหนึ่งในเทพธิดาองค์ใหม่แห่ง Aranyarat ที่เพิ่งถือกำเนิด ในจักรวาล Ox'Zaruun — ออกแบบตัวละคร กล่อง และการ์ด จนผลิตเป็นชิ้นงานจับต้องได้ และได้รับคัดเลือกเป็น 1 ใน 2 ตัวแทนของกลุ่ม 2 ขึ้นนำเสนอผลงานบนเวที",
+      "cover": "media/plai-1.webp",
+      "images": [
+        "media/plai-1.webp",
+        "media/plai-2.webp",
+        "media/plai-3.webp",
+        "media/plai-4.webp"
+      ],
+      "video": "",
+      "software": [],
+      "points": [
+        {
+          "title": "ประสบการณ์ที่ได้รับ",
+          "code": "",
+          "body": "หนูได้รับคัดเลือกให้เป็น 1 ใน 2 ตัวแทนของกลุ่ม 2 เพื่อนำผลงานของตัวเองขึ้นนำเสนอบนเวทีร่วมกับกลุ่มอื่น ๆ ประสบการณ์ครั้งนี้ทำให้หนูได้เรียนรู้ด้านการค้า การออกแบบ และการผสมผสานวัฒนธรรมเข้ากับชิ้นงานในสไตล์ของหนูเอง อีกทั้งยังได้ฝึกความกล้าแสดงออกและพัฒนาทักษะการพูดนำเสนอบนเวทีมากขึ้น"
+        }
+      ]
+    },
+    {
+      "id": "afo-coop",
+      "number": "05",
+      "title": "All-For-One · Co-op",
+      "subtitle": "ส่วน co-op ที่หนูทำ",
+      "status": "In development",
+      "tone": "blue",
+      "genre": "Online co-op · 3 players",
+      "duration": "",
+      "role": "Co-op systems · lobby · map",
+      "team": "Team project",
+      "summary": "ระบบเล่นออนไลน์ 3 คนด้วยโค้ดห้อง แต่ละคนได้บทบาทไม่ซ้ำ — คนตาบอด คนหูหนวก คนพูดอู้อี้ — แล้วต้องช่วยกันหนีออกจากห้างที่ไฟไหม้",
+      "cover": "projects/afo-coop.webp",
+      "images": [],
+      "video": "",
+      "software": [
+        "Unity 6",
+        "Netcode for GameObjects",
+        "Relay"
+      ],
+      "points": [
+        {
+          "title": "Lobby + Ready + เลือกบทบาท",
+          "code": "",
+          "body": "sync ทุกเครื่อง เล่นข้ามเน็ตด้วยโค้ดห้องผ่าน Unity Relay อัปโหลดรูปหน้าใส่ตัวละคร Chibi และมี Editor script สร้างแมพห้างอัตโนมัติ"
+        }
+      ]
+    },
+    {
+      "id": "afterglow",
+      "number": "06",
+      "title": "City of Soul",
+      "subtitle": "AFTERGLOW",
+      "status": "Prototype",
+      "tone": "violet",
+      "genre": "3D first-person story adventure",
+      "duration": "",
+      "role": "Design · level blockout",
+      "team": "Team",
+      "summary": "เด็กชายโคม่าตกลงไปในเมืองแห่งวิญญาณเพื่อตามหาแม่ โดยมีวิญญาณในสร้อยคอเป็นเพื่อนร่วมทาง เดโม 15–25 นาที สไตล์ยุโรปผสมไทย",
+      "cover": "projects/afterglow.webp",
+      "images": [],
+      "video": "",
+      "software": [
+        "Unity",
+        "ProBuilder"
+      ],
+      "points": []
+    },
+    {
+      "id": "dragon-racing",
+      "number": "07",
+      "title": "Dragon Racing",
+      "subtitle": "working title",
+      "status": "Concept",
+      "tone": "gray",
+      "genre": "Online racing · 6 players",
+      "duration": "",
+      "role": "Solo",
+      "team": "เดี่ยว",
+      "summary": "แข่งความเร็วบนหลังมังกรคู่หูผ่านโลกแฟนตาซีสีสด เล่นกับเพื่อน สไตล์ anime cel-shaded ด่านแรก Ring Canyon บินลอดวงแหวนหิน",
+      "cover": "projects/dragon-racing.webp",
+      "images": [],
+      "video": "",
+      "software": [
+        "Unity 6",
+        "URP"
+      ],
+      "points": []
+    }
+  ],
+  "gallery": [
+    {
+      "id": "alyss-axon",
+      "title": "Alyss & Axon — 3D Characters",
+      "category": "3D",
+      "tools": "Blender",
+      "note": "Alyss ตัวละครที่ได้แรงบันดาลใจจาก Alice in Wonderland · Axon ตัวละครหลักที่ฉันมักจะนำมาใส่เกมต่าง ๆ มีเนื้อเรื่องเยอะที่สุดในบรรดาตัวละครต้นฉบับ",
+      "image": "media/alyss-axon.webp",
+      "pixel": false
+    },
+    {
+      "id": "model-in-engine",
+      "title": "3D Model — In Engine",
+      "category": "3D",
+      "tools": "Blender · Mixamo · Unity · C#",
+      "note": "ออกแบบและปั้นโมเดลตัวละครต้นฉบับด้วย Blender ทำ topology ให้สะอาด พร้อมสำหรับ rig และใช้งานจริงในเกม · ริกด้วย Mixamo นำเข้า Unity และเขียนสคริปต์ควบคุมด้วย C# ใน Visual Studio โดยมี Claude ช่วยแก้ไขปัญหาโค้ดระหว่างพัฒนา",
+      "image": "media/model-in-engine.webp",
+      "pixel": false
+    },
+    {
+      "id": "web-dimen",
+      "title": "DIMEN — Web Project",
+      "category": "Web",
+      "tools": "HTML · CSS",
+      "note": "เว็บไซต์นี้พัฒนาด้วย HTML และ CSS จากการเข้าร่วมอบรมค่ายของ CodeMula ระยะเวลา 2 วัน โดยได้รับการประเมินผลงานในระดับดีเยี่ยม คะแนน 93 คะแนน · ปัจจุบันเว็บไซต์ยังอยู่ระหว่างการพัฒนา",
+      "image": "media/web-dimen.webp",
+      "pixel": false
+    },
+    {
+      "id": "digital-art",
+      "title": "Digital Art",
+      "category": "Illustration",
+      "tools": "Procreate · Clip Studio Paint",
+      "note": "รวมงานวาดดิจิทัล",
+      "image": "media/digital-art.webp",
+      "pixel": false
+    },
+    {
+      "id": "plai-sketch",
+      "title": "ปลายเชียร — Sketch F · B · S",
+      "category": "Illustration",
+      "tools": "Sketch",
+      "note": "สเก็ตช์ตัวละคร Art Toy ด้านหน้า หลัง และข้าง",
+      "image": "media/plai-2.webp",
+      "pixel": false
+    },
+    {
+      "id": "coastal-town",
+      "title": "Coastal Town",
+      "category": "Illustration",
+      "tools": "Clip Studio Paint",
+      "note": "ภาพวาดเต็ม 7016×4960 — วางองค์ประกอบด้วย golden ratio จากฉาก 3D ที่บล็อกไว้ก่อน",
+      "image": "art/gallery/coastal-town.webp",
+      "pixel": false
+    },
+    {
+      "id": "undertaker-key",
+      "title": "Undertaker — Key Art",
+      "category": "3D",
+      "tools": "Blender · EEVEE",
+      "note": "เรนเดอร์จากไฟล์ rig จริง (Unity Humanoid + face rig)",
+      "image": "art/undertaker_key.webp",
+      "pixel": false
+    },
+    {
+      "id": "composition-study",
+      "title": "Composition Study",
+      "category": "Process",
+      "tools": "Blender",
+      "note": "บล็อกฉากใน Blender + เส้น golden ratio ก่อนวาดทับเป็นภาพ Coastal Town",
+      "image": "art/gallery/composition-study.webp",
+      "pixel": false
+    },
+    {
+      "id": "base-mesh",
+      "title": "Character Base Mesh",
+      "category": "Process",
+      "tools": "Blender",
+      "note": "ขั้นตอนโมเดลตัวละครก่อนใส่เสื้อผ้า",
+      "image": "art/gallery/base-mesh.webp",
+      "pixel": false
+    },
+    {
+      "id": "lom-sprites",
+      "title": "Lom — Sprite Sheet",
+      "category": "Game Asset",
+      "tools": "Aseprite",
+      "note": "สไปรต์เดิน 4 ทิศของตัวละคร Lom",
+      "image": "art/gallery/lom-sprites.png",
+      "pixel": true
+    },
+    {
+      "id": "liminal-tree",
+      "title": "LIMINAL — Tree",
+      "category": "Game Asset",
+      "tools": "Digital painting",
+      "note": "asset ต้นไม้ของโปรเจกต์ LIMINAL",
+      "image": "art/gallery/liminal-tree.webp",
+      "pixel": false
+    },
+    {
+      "id": "liminal-logs",
+      "title": "LIMINAL — Logs",
+      "category": "Game Asset",
+      "tools": "Digital painting",
+      "note": "asset กองท่อนไม้ของโปรเจกต์ LIMINAL",
+      "image": "art/gallery/liminal-logs.webp",
+      "pixel": false
+    },
+    {
+      "id": "undertaker-bust",
+      "title": "Undertaker — Portrait",
+      "category": "3D",
+      "tools": "Blender · EEVEE",
+      "note": "โคลสอัพหน้า — หน้าเป็น shape key face rig 41 แบบ",
+      "image": "art/undertaker_bust.webp",
+      "pixel": false
+    }
+  ],
+  "models": [
+    {
+      "id": "undertaker",
+      "kind": "Character",
+      "name": "Undertaker",
+      "title": "Gothic Swordswoman",
+      "description": "ตัวละครหลัก — rig Unity Humanoid 165 กระดูก พร้อม face rig (blendshape) โชว์ท่า T-Pose กับเดิน Horse Catwalk",
+      "model": "models/character.glb",
+      "thumb": "art/undertaker_bust.webp",
+      "height": 1.9,
+      "lift": 0,
+      "spin": false,
+      "clips": [
+        "T-Pose",
+        "Horse Catwalk"
+      ],
+      "defaultClip": "Horse Catwalk",
+      "specs": [
+        {
+          "label": "Tris",
+          "value": "~55,000"
+        },
+        {
+          "label": "Textures",
+          "value": "2048² (web)"
+        },
+        {
+          "label": "Rig",
+          "value": "Unity Humanoid · 165 bones"
+        },
+        {
+          "label": "Face",
+          "value": "41 blendshapes"
+        },
+        {
+          "label": "Clips",
+          "value": "T-Pose · Horse Catwalk"
+        }
+      ],
+      "tools": [
+        "Blender",
+        "Tripo",
+        "Unity"
+      ]
+    },
+    {
+      "id": "bro",
+      "kind": "Character",
+      "name": "Bro",
+      "title": "Chibi Character · Face Board",
+      "description": "ตัวละครจิบิ — โมเดลจาก Tripo แล้วริกเองใน Blender 75 กระดูก มี 6 ท่า และระบบเปลี่ยนหน้า 24 แบบ: บอร์ดหน้าเลื่อน UV ของหน้าไปบน sticker sheet (กด Faces เพื่อเลือกหน้าเอง)",
+      "model": "models/bro.glb",
+      "thumb": "media/bro-thumb.webp",
+      "height": 1.5,
+      "lift": 0,
+      "spin": false,
+      "clips": [],
+      "defaultClip": "Idle Wait",
+      "specs": [
+        {
+          "label": "Tris",
+          "value": "~26,000"
+        },
+        {
+          "label": "Rig",
+          "value": "Blender · 75 bones"
+        },
+        {
+          "label": "Faces",
+          "value": "24 (face board 6 × 4)"
+        },
+        {
+          "label": "Clips",
+          "value": "Idle · Walk · Talk · Happy · React · Angry"
+        }
+      ],
+      "tools": [
+        "Tripo",
+        "Blender"
+      ],
+      "faces": {
+        "material": "FaceSheet",
+        "sheet": "media/bro-faces.webp",
+        "sheetSize": [
+          1536,
+          1024
+        ],
+        "cols": 6,
+        "rows": 4,
+        "stepU": 0.162109,
+        "stepV": 0.237305,
+        "cell": [
+          0.0222,
+          0.678,
+          0.1499,
+          0.2373
+        ],
+        "default": [
+          2,
+          1
+        ],
+        "timeline": {
+          "Idle Wait": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              2.125,
+              0,
+              2
+            ],
+            [
+              2.4583,
+              2,
+              1
+            ]
+          ],
+          "Walk Cute": [
+            [
+              0,
+              2,
+              1
+            ]
+          ],
+          "Talk Explain": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              0.3333,
+              3,
+              1
+            ],
+            [
+              1.8333,
+              3,
+              2
+            ],
+            [
+              2.8333,
+              3,
+              1
+            ],
+            [
+              3.3333,
+              2,
+              1
+            ]
+          ],
+          "Happy Pay": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              0.2083,
+              4,
+              1
+            ],
+            [
+              0.7083,
+              1,
+              1
+            ],
+            [
+              1.375,
+              3,
+              3
+            ],
+            [
+              2.3333,
+              2,
+              1
+            ]
+          ],
+          "React Price": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              0.3333,
+              0,
+              1
+            ],
+            [
+              0.75,
+              0,
+              3
+            ],
+            [
+              1.4167,
+              3,
+              2
+            ],
+            [
+              2.5,
+              2,
+              1
+            ]
+          ],
+          "Caught Angry": [
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              0.0833,
+              4,
+              3
+            ],
+            [
+              1.5417,
+              4,
+              0
+            ],
+            [
+              2.5,
+              2,
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "id": "relic",
+      "kind": "Prop",
+      "name": "Relic",
+      "title": "Crystal Artifact",
+      "description": "ของประกอบฉาก — คอนเซ็ปต์จาก ChatGPT แปลงเป็น 3D ด้วย Tripo แล้วลดโพลีใน Blender ให้โหลดบนเว็บได้",
+      "model": "models/relic.glb",
+      "thumb": "art/relic_thumb.webp",
+      "height": 1.1,
+      "lift": 0.45,
+      "spin": true,
+      "clips": [],
+      "defaultClip": "",
+      "specs": [
+        {
+          "label": "Tris",
+          "value": "~130,000"
+        },
+        {
+          "label": "Pipeline",
+          "value": "ChatGPT → Tripo → Blender"
+        },
+        {
+          "label": "Format",
+          "value": "GLB · meshopt"
+        }
+      ],
+      "tools": [
+        "ChatGPT",
+        "Tripo",
+        "Blender"
+      ]
+    }
+  ],
+  "about": {
+    "fullName": "ธัญญลักษณ์ พิมัยรัมย์",
+    "nickname": "ธัญโย",
+    "photo": "media/me-photo.webp",
+    "avatar": "media/me-avatar.webp",
+    "facts": [
+      {
+        "label": "ชื่อเล่น",
+        "value": "ธัญโย"
+      },
+      {
+        "label": "อายุ",
+        "value": "18 ปี"
+      },
+      {
+        "label": "โรงเรียน",
+        "value": "โรงเรียนภูเขียว"
+      },
+      {
+        "label": "แผนการเรียน",
+        "value": "วิทย์ - คณิต"
+      },
+      {
+        "label": "เป้าหมาย",
+        "value": "สาขาวิชาดิจิทัลเกม CAMT มหาวิทยาลัยเชียงใหม่"
+      }
+    ],
+    "quote": "“มนุษย์ไม่ได้เป็นอะไรอื่น นอกจากสิ่งที่เขาสร้างตัวเองขึ้นมา”",
+    "quoteBy": "Jean Paul Sartre, Existentialism Is a Humanism",
+    "statement": [
+      "หนูเป็นคนที่มีความคิดมากมาย ในหัวเต็มไปด้วยความฝันแปลก ๆ อยู่เสมอ ทั้งการได้โบยบินบนท้องฟ้า ทางเดินว่างเปล่าที่ไม่มีวันสิ้นสุด สูตรคณิตศาสตร์ที่กลายเป็นกฎของโลกใบหนึ่ง เหตุการณ์แฟนตาซี ไปจนถึงระบบเกมและภาพกราฟิกที่ผุดขึ้นมาไม่หยุด แต่ในวัยเด็กหนูเป็นคนสื่อสารไม่เก่ง โลกทั้งใบในหัวจึงไม่เคยออกมาให้ใครเห็น และหนูเคยเชื่อว่าความฝันที่จะสร้างเกมของตัวเองเป็นไปไม่ได้สำหรับคนแบบหนู",
+      "จนหนูพบว่าเกมคือภาษาที่เหมาะกับหนูที่สุด เพราะเกมไม่ได้บังคับให้ต้องอธิบายทุกอย่างด้วยคำพูด แต่เปิดให้ผู้เล่นเดินเข้าไปในโลกนั้น และเลือกการกระทำได้ด้วยตัวเอง สิ่งที่หนูเล่าไม่ได้ ผู้เล่นจะได้สัมผัสเอง ความเงียบในวัยเด็กจึงไม่ใช่ข้อจำกัดอีกต่อไป แต่กลายเป็นเหตุผลที่หนูเลือกสื่อสารผ่านเกม",
+      "หนูจึงเริ่มสร้างตัวเองทีละอย่าง ฝึกวาดภาพและออกแบบตัวละคร ปั้นโมเดล 3D ใน Blender คิดระบบปรับแต่งตัวละคร Live2D ขึ้นเองเพราะหาที่สอนไม่ได้จนเปิดขายได้จริง และร่วมพัฒนาเกมกับทีมด้วย Unity ทุกชิ้นงานคือหลักฐานว่าหนูไม่ได้เกิดมาเป็นนักสร้างเกม แต่หนูกำลังสร้างตัวเองให้เป็น",
+      "เป้าหมายของหนูคือการเป็น Game Designer ที่สร้างเกมเต็มไปด้วยเรื่องราว แนวคิด และปรัชญาที่ชวนให้ผู้เล่นฉุกคิด เกมที่ผู้เล่นได้สร้างตัวเองผ่านการเลือกของพวกเขา เหมือนที่หนูได้สร้างตัวเองมา และวันหนึ่งหนูอยากมีสตูดิโอเกมของตัวเอง"
+    ],
+    "skills": [
+      "Blender",
+      "Unity",
+      "Live2D",
+      "Procreate",
+      "Clip Studio Paint",
+      "Aseprite",
+      "Photoshop",
+      "Illustrator",
+      "After Effects",
+      "CapCut",
+      "HTML / CSS"
+    ],
+    "education": [
+      {
+        "school": "โรงเรียนภูเขียว",
+        "years": "ม.1 – ม.6"
+      },
+      {
+        "school": "โรงเรียนอนุบาลบ้านทับทิม",
+        "years": "ป.6"
+      },
+      {
+        "school": "โรงเรียนเพชรราษฎร์บำรุง",
+        "years": "อนุบาล 2 – ป.5"
+      }
+    ],
+    "hobbies": [
+      "เล่นเกม",
+      "วาดรูป",
+      "แต่งนิยาย / ออกแบบเนื้อเรื่อง",
+      "ออกแบบตัวละคร",
+      "ปั้นโมเดล",
+      "ริก 2D",
+      "ดูหนัง / อนิเมะ / ซีรีส์",
+      "ฟังเพลง",
+      "เขียนโค้ดและเรียนรู้"
+    ]
+  },
+  "contacts": [
+    {
+      "label": "Email",
+      "value": "zenxn490@gmail.com",
+      "url": "mailto:zenxn490@gmail.com"
+    },
+    {
+      "label": "Instagram",
+      "value": "thanyo._",
+      "url": "https://www.instagram.com/thanyo._/"
+    },
+    {
+      "label": "Facebook",
+      "value": "Than Ya Luck",
+      "url": ""
+    }
+  ]
+}

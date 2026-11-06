@@ -1,36 +1,29 @@
-import { lazy, Suspense, useSyncExternalStore } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import TitleScreen from './pages/TitleScreen'
-import MainMenu from './pages/MainMenu'
-import Projects from './pages/Projects'
-import Gallery from './pages/Gallery'
-import Profile from './pages/Profile'
-import { menuAccent } from './lib/menuAccent'
+import { lazy, Suspense } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { ContentProvider } from './content/store'
+import { Layout } from './components/Layout'
+import Home from './pages/Home'
+import Work from './pages/Work'
 
-// Three.js pages/scenes are split out so the first paint is fast.
-const Characters = lazy(() => import('./pages/Characters'))
-const MenuScene = lazy(() => import('./components/MenuScene'))
+const Studio = lazy(() => import('./pages/Studio'))
 
+/**
+ * THANYO portfolio — a normal scrolling website with a live 3D viewer.
+ * All content lives in src/content/site.json and can be edited in the browser ("แก้ไขเว็บ").
+ */
 export default function App() {
-  const location = useLocation()
-  const path = location.pathname
-  const view = path === '/' ? 'title' : path === '/menu' ? 'menu' : null
-  const accent = useSyncExternalStore(menuAccent.subscribe, menuAccent.get)
   return (
-    <div className="app">
-      {/* one persistent 3D world for title + menu, so the camera can swing between them */}
-      {view && <Suspense fallback={null}><MenuScene view={view} accent={accent} /></Suspense>}
-      <Suspense fallback={<div className="loading-screen"><div className="loader" />LOADING</div>}>
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<TitleScreen />} />
-          <Route path="/menu" element={<MainMenu />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/characters" element={<Characters />} />
-          <Route path="/gallery" element={<Gallery />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-    </div>
+    <ContentProvider>
+      <Routes>
+        <Route path="/studio" element={<Suspense fallback={<div className="loading-screen">Loading…</div>}><Studio /></Suspense>} />
+        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/work/:id" element={<Layout><Work /></Layout>} />
+        {/* old routes from earlier versions */}
+        <Route path="/games/*" element={<Navigate to="/" state={{ section: 'works' }} replace />} />
+        <Route path="/gallery" element={<Navigate to="/" state={{ section: 'gallery' }} replace />} />
+        <Route path="/profile" element={<Navigate to="/" state={{ section: 'about' }} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ContentProvider>
   )
 }
