@@ -83,8 +83,19 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     if (mode === 'none') { download(); flash('ดาวน์โหลด site.json แล้ว — เอาไปวางแทน src/content/site.json'); return }
     setStatus('กำลังบันทึก…')
     if (mode === 'github') {
-      try { await commitSite(getToken(), JSON.stringify(site, null, 2) + String.fromCharCode(10)) } catch (e) { flash('บันทึกไม่สำเร็จ: ' + (e instanceof Error ? e.message : e)); return }
-      try { localStorage.setItem(PENDING, JSON.stringify({ at: Date.now(), site })) } catch { /* ignore */ }
+      // images added before GitHub was connected are still data: URLs — upload them as files first
+      const found: { o: Record<string, unknown>; k: string; v: string }[] = []
+      const walk = (o: unknown) => { if (o && typeof o === 'object') for (const [k, v] of Object.entries(o)) { if (typeof v === 'string' && v.startsWith('data:')) found.push({ o: o as Record<string, unknown>, k, v }); else walk(v) } }
+      const copy = structuredClone(site); walk(copy)
+      try {
+        for (const f of found) {
+          const blob = await (await fetch(f.v)).blob(); const ext = blob.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png'
+          const path = await commitUpload(getToken(), new File([blob], `image.${ext}`, { type: blob.type }), 'media'); addPreview(path, blob); f.o[f.k] = path
+        }
+      } catch (e) { flash('อัปโหลดรูปไม่สำเร็จ: ' + (e instanceof Error ? e.message : e)); return }
+      if (found.length) setSite(copy)
+      try { await commitSite(getToken(), JSON.stringify(found.length ? copy : site, null, 2) + String.fromCharCode(10)) } catch (e) { flash('บันทึกไม่สำเร็จ: ' + (e instanceof Error ? e.message : e)); return }
+      try { localStorage.setItem(PENDING, JSON.stringify({ at: Date.now(), site: found.length ? copy : site })) } catch { /* ignore */ }
     } else {
       const r = await fetch('/__cms/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(site) })
       if (!r.ok) { flash('บันทึกไม่สำเร็จ: ' + ((await r.json().catch(() => ({}))).error ?? r.status)); return }
