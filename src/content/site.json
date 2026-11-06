@@ -192,12 +192,11 @@
       "role": "ออกแบบตัวละคร · กล่อง · การ์ด",
       "team": "",
       "summary": "หญิงสาวหนึ่งในเทพธิดาองค์ใหม่แห่ง Aranyarat ที่เพิ่งถือกำเนิด ในจักรวาล Ox'Zaruun — ออกแบบตัวละคร กล่อง และการ์ด จนผลิตเป็นชิ้นงานจับต้องได้ และได้รับคัดเลือกเป็น 1 ใน 2 ตัวแทนของกลุ่ม 2 ขึ้นนำเสนอผลงานบนเวที",
-      "cover": "media/plai-1.webp",
+      "cover": "media/uploads/screenshot-2026-11-06-144226-mw4o3gj9.jpg",
       "images": [
         "media/plai-1.webp",
         "media/plai-2.webp",
-        "media/plai-3.webp",
-        "media/plai-4.webp"
+        "media/plai-3.webp"
       ],
       "video": "",
       "software": [],
@@ -269,51 +268,6 @@
       "pixel": false
     },
     {
-      "id": "plai-sketch",
-      "title": "ปลายเชียร — Sketch F · B · S",
-      "category": "Illustration",
-      "tools": "Sketch",
-      "note": "สเก็ตช์ตัวละคร Art Toy ด้านหน้า หลัง และข้าง",
-      "image": "media/plai-2.webp",
-      "pixel": false
-    },
-    {
-      "id": "coastal-town",
-      "title": "Coastal Town",
-      "category": "Illustration",
-      "tools": "Clip Studio Paint",
-      "note": "ภาพวาดเต็ม 7016×4960 — วางองค์ประกอบด้วย golden ratio จากฉาก 3D ที่บล็อกไว้ก่อน",
-      "image": "art/gallery/coastal-town.webp",
-      "pixel": false
-    },
-    {
-      "id": "undertaker-key",
-      "title": "Undertaker — Key Art",
-      "category": "3D",
-      "tools": "Blender · EEVEE",
-      "note": "เรนเดอร์จากไฟล์ rig จริง (Unity Humanoid + face rig)",
-      "image": "art/undertaker_key.webp",
-      "pixel": false
-    },
-    {
-      "id": "composition-study",
-      "title": "Composition Study",
-      "category": "Process",
-      "tools": "Blender",
-      "note": "บล็อกฉากใน Blender + เส้น golden ratio ก่อนวาดทับเป็นภาพ Coastal Town",
-      "image": "art/gallery/composition-study.webp",
-      "pixel": false
-    },
-    {
-      "id": "base-mesh",
-      "title": "Character Base Mesh",
-      "category": "Process",
-      "tools": "Blender",
-      "note": "ขั้นตอนโมเดลตัวละครก่อนใส่เสื้อผ้า",
-      "image": "art/gallery/base-mesh.webp",
-      "pixel": false
-    },
-    {
       "id": "lom-sprites",
       "title": "Lom — Sprite Sheet",
       "category": "Game Asset",
@@ -321,33 +275,6 @@
       "note": "สไปรต์เดิน 4 ทิศของตัวละคร Lom",
       "image": "art/gallery/lom-sprites.png",
       "pixel": true
-    },
-    {
-      "id": "liminal-tree",
-      "title": "LIMINAL — Tree",
-      "category": "Game Asset",
-      "tools": "Digital painting",
-      "note": "asset ต้นไม้ของโปรเจกต์ LIMINAL",
-      "image": "art/gallery/liminal-tree.webp",
-      "pixel": false
-    },
-    {
-      "id": "liminal-logs",
-      "title": "LIMINAL — Logs",
-      "category": "Game Asset",
-      "tools": "Digital painting",
-      "note": "asset กองท่อนไม้ของโปรเจกต์ LIMINAL",
-      "image": "art/gallery/liminal-logs.webp",
-      "pixel": false
-    },
-    {
-      "id": "undertaker-bust",
-      "title": "Undertaker — Portrait",
-      "category": "3D",
-      "tools": "Blender · EEVEE",
-      "note": "โคลสอัพหน้า — หน้าเป็น shape key face rig 41 แบบ",
-      "image": "art/undertaker_bust.webp",
-      "pixel": false
     }
   ],
   "models": [
@@ -356,7 +283,7 @@
       "kind": "Character",
       "name": "Undertaker",
       "title": "Gothic Swordswoman",
-      "description": "ตัวละครหลัก — rig Unity Humanoid 165 กระดูก พร้อม face rig (blendshape) โชว์ท่า T-Pose กับเดิน Horse Catwalk",
+      "description": "ตัวละครหลัก rig Unity Humanoid 165 กระดูก พร้อม face rig (blendshape) โชว์ท่า T-Pose กับเดิน Horse Catwalk",
       "model": "models/character.glb",
       "thumb": "art/undertaker_bust.webp",
       "height": 1.9,
@@ -400,7 +327,7 @@
       "kind": "Character",
       "name": "Bro",
       "title": "Chibi Character · Face Board",
-      "description": "ตัวละครจิบิ — โมเดลจาก Tripo แล้วริกเองใน Blender 75 กระดูก มี 6 ท่า และระบบเปลี่ยนหน้า 24 แบบ: บอร์ดหน้าเลื่อน UV ของหน้าไปบน sticker sheet (กด Faces เพื่อเลือกหน้าเอง)",
+      "description": "ตัวละครจิบิ  โมเดลจาก Tripo แล้วริกเองใน Blender 75 กระดูก มี 6 ท่า และระบบเปลี่ยนหน้า 24 แบบ: บอร์ดหน้าเลื่อน UV ของหน้าไปบน sticker sheet (กด Faces เพื่อเลือกหน้าเอง)",
       "model": "models/bro.glb",
       "thumb": "media/bro-thumb.webp",
       "height": 1.5,
