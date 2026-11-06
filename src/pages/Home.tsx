@@ -138,7 +138,7 @@ function Gallery() {
               <ItemTools list={['gallery']} index={i} title={a.title} />
             </figure>
           ))}
-          <AddItem list={['gallery']} make={blank.art} label="+ เพิ่มภาพ" className="card-add art-add" />
+          <AddItem list={['gallery']} make={blank.art} label="+ เพิ่มภาพ" className="card-add art-add" fromImage={(src, name) => ({ ...blank.art(), title: name, image: src })} />
         </div>
       </div>
       {view !== null && (

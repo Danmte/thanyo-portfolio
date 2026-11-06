@@ -25,16 +25,48 @@ export function T({ path, as: Tag = 'span', className, multiline, placeholder }:
   )
 }
 
-/** Image that can be replaced (upload) in edit mode. */
+/** Drag-and-drop image files onto an element (edit mode). Returns props to spread + whether a file is hovering. */
+export function useImageDrop(onFiles: (files: File[]) => void, enabled: boolean) {
+  const [over, setOver] = useState(false)
+  const depth = useRef(0)
+  const isFiles = (e: React.DragEvent) => [...e.dataTransfer.types].includes('Files')
+  if (!enabled) return { over: false, props: {} }
+  return {
+    over,
+    props: {
+      onDragEnter: (e: React.DragEvent) => { if (!isFiles(e)) return; e.preventDefault(); depth.current++; setOver(true) },
+      onDragOver: (e: React.DragEvent) => { if (!isFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy' },
+      onDragLeave: () => { depth.current = Math.max(0, depth.current - 1); if (!depth.current) setOver(false) },
+      onDrop: (e: React.DragEvent) => {
+        if (!isFiles(e)) return
+        e.preventDefault(); e.stopPropagation(); depth.current = 0; setOver(false)
+        const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith('image/'))
+        if (files.length) onFiles(files)
+      },
+    },
+  }
+}
+
+/** Image that can be replaced in edit mode — button, or drag an image file onto it (shows instantly, uploads in the background). */
 export function Img({ path, className, alt = '', style, fit = 'cover', empty }: {
   path: Path; className?: string; alt?: string; style?: CSSProperties; fit?: 'cover' | 'contain'; empty?: ReactNode
 }) {
-  const { edit, get } = useSite()
+  const { edit, get, set, upload } = useSite()
   const src = str(get(path))
+  const [preview, setPreview] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const replace = async (f: File) => {
+    const url = URL.createObjectURL(f); setPreview(url); setBusy(true)
+    try { set(path, await upload(f)) } catch { /* status bar shows the error */ } finally { setBusy(false); setPreview(null) }
+  }
+  const drop = useImageDrop((files) => replace(files[0]), edit)
+  const shown = preview ?? (src ? asset(src) : '')
   return (
-    <span className={`img-slot ${className ?? ''}`} style={style}>
-      {src ? <img src={asset(src)} alt={alt} loading="lazy" style={{ objectFit: fit }} /> : (empty ?? <span className="img-empty"><Icon name="image" /></span>)}
+    <span className={`img-slot ${className ?? ''} ${drop.over ? 'drop-over' : ''} ${busy ? 'uploading' : ''}`} style={style} {...drop.props}>
+      {shown ? <img src={shown} alt={alt} loading="lazy" style={{ objectFit: fit }} /> : (empty ?? <span className="img-empty"><Icon name="image" /></span>)}
       {edit && <ImagePicker path={path} label={src ? 'เปลี่ยนรูป' : 'ใส่รูป'} className="img-edit" />}
+      {edit && drop.over && <span className="drop-hint"><Icon name="image" />วางรูปเพื่อเปลี่ยน</span>}
+      {busy && <span className="drop-busy">กำลังอัปโหลด…</span>}
     </span>
   )
 }
@@ -74,14 +106,30 @@ export function ItemTools({ list, index, title }: { list: Path; index: number; t
   )
 }
 
-export function AddItem<V>({ list, make, label, className, open = true }: { list: Path; make: () => V; label: string; className?: string; open?: boolean }) {
-  const { edit, get, set, openForm } = useSite()
+export function AddItem<V>({ list, make, label, className, open = true, fromImage }: {
+  list: Path; make: () => V; label: string; className?: string; open?: boolean
+  fromImage?: (src: string, name: string) => V // when set, image files dropped here become new items
+}) {
+  const { edit, get, set, update, openForm, upload } = useSite()
+  const [busy, setBusy] = useState(0)
+  const drop = useImageDrop(async (files) => {
+    if (!fromImage) return
+    setBusy(files.length)
+    for (const f of files) {
+      try {
+        const p = await upload(f)
+        const title = f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ')
+        update((d) => { let o: unknown = d; for (const k of list) o = (o as Record<string, unknown>)[k as string]; (o as unknown[]).push(fromImage(p, title)) })
+      } catch { /* status bar shows the error */ }
+      setBusy((n) => n - 1)
+    }
+  }, edit && !!fromImage)
   if (!edit) return null
   return (
-    <button type="button" className={`add-item ${className ?? ''}`} onClick={() => {
+    <button type="button" className={`add-item ${className ?? ''} ${drop.over ? 'drop-over' : ''}`} {...drop.props} onClick={() => {
       const arr = (get(list) as unknown[]) ?? []; set(list, [...arr, make()])
       if (open) openForm([...list, arr.length], label.replace(/^\+\s*/, ''))
-    }}><Icon name="plus" size={16} />{label}</button>
+    }}><Icon name="plus" size={16} />{busy ? `กำลังอัปโหลด ${busy} รูป…` : drop.over ? 'วางรูปเพื่อเพิ่ม' : label}{fromImage && !busy && !drop.over && <small>หรือลากรูปมาวาง</small>}</button>
   )
 }
 
@@ -256,9 +304,11 @@ function ImageAdder({ path, arr }: { path: Path; arr: string[] }) {
   const { upload, set } = useSite()
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
+  const add = async (files: File[]) => { setBusy(true); try { const paths: string[] = []; for (const f of files) paths.push(await upload(f)); set(path, [...arr, ...paths]) } finally { setBusy(false) } }
+  const drop = useImageDrop(add, true)
   return (
     <>
-      <button type="button" className="f-thumb add" onClick={() => input.current?.click()} disabled={busy}><Icon name="plus" />{busy ? '…' : 'เพิ่มรูป'}</button>
+      <button type="button" className={`f-thumb add ${drop.over ? 'drop-over' : ''}`} {...drop.props} onClick={() => input.current?.click()} disabled={busy}><Icon name="plus" />{busy ? '…' : drop.over ? 'วางรูป' : 'เพิ่ม / ลากรูป'}</button>
       <input ref={input} type="file" accept="image/*" multiple hidden onChange={async (e) => {
         const files = [...(e.target.files ?? [])]; e.target.value = ''
         if (!files.length) return

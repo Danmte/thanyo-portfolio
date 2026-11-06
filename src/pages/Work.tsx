@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useSite } from '../content/store'
-import { EditBlock, Img, T } from '../content/Editable'
+import { EditBlock, Img, T, useImageDrop } from '../content/Editable'
 import { Lightbox } from '../components/Lightbox'
 import { Icon } from '../components/Icon'
 import { StatusTag } from './Home'
@@ -11,9 +11,15 @@ const youtubeId = (url: string) => url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/
 
 export default function Work() {
   const { id } = useParams()
-  const { site, edit } = useSite()
+  const { site, edit, upload, update } = useSite()
   const i = site.works.findIndex((w) => w.id === id)
   const [view, setView] = useState<number | null>(null)
+  const [adding, setAdding] = useState(0)
+  // edit mode: drop image files on the shots area to add them to this work
+  const drop = useImageDrop(async (files) => {
+    setAdding(files.length)
+    for (const f of files) { try { const p = await upload(f); update((d) => { d.works[i].images.push(p) }) } catch { /* shown in the edit bar */ } setAdding((n) => n - 1) }
+  }, edit && i >= 0)
   useEffect(() => { window.scrollTo(0, 0) }, [id])
   if (i < 0) return <Navigate to="/" replace />
   const w = site.works[i]
@@ -68,9 +74,9 @@ export default function Work() {
           </aside>
         </div>
 
-        {images.length > 0 && (
-          <section className="work-shots">
-            <h2 className="h-sm">ภาพจากงาน</h2>
+        {(images.length > 0 || edit) && (
+          <section className={`work-shots ${drop.over ? 'drop-over' : ''}`} {...drop.props}>
+            <h2 className="h-sm">ภาพจากงาน{edit && <small className="drop-note">{adding ? `กำลังอัปโหลด ${adding} รูป…` : 'ลากรูปมาวางตรงนี้เพื่อเพิ่ม'}</small>}</h2>
             <div className="shots">
               {images.map((src, k) => (
                 <button key={k} className="shot" onClick={() => setView(k)}><img src={asset(src)} alt={`${w.title} ${k + 1}`} loading="lazy" /></button>
