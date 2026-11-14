@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSite } from '../content/store'
 import { AddItem, EditBlock, Img, ItemTools, T } from '../content/Editable'
 import { blank } from '../content/types'
@@ -71,25 +71,34 @@ function Hero() {
   )
 }
 
-const REEL_MS = 2000 // time on each featured slide
-const REEL_HOLD_MS = 5000 // pause after the visitor clicks a dot / touches the card
-
-/** One featured work: big cover (or its clip) + summary. `i` = index in site.works (for the editor paths). */
-function FeaturedCard({ w, i, active, near }: { w: Work; i: number; active: boolean; near: boolean }) {
+/**
+ * One featured work, shown in full: big cover (or its clip) + summary. `i` = index in site.works (for the editor paths).
+ * A clip plays while the card is on screen; links into the work page carry its time (state.t) so the clip continues there.
+ * A work with `demo` gets a play button on the cover and next to "ดูรายละเอียด", so it's clear it can be played.
+ */
+function FeaturedCard({ w, i }: { w: Work; i: number }) {
   const vid = useRef<HTMLVideoElement>(null)
-  useEffect(() => { // the clip plays only while its slide is on screen; pausing keeps its time, so it resumes there
+  useEffect(() => {
     const v = vid.current
     if (!v) return
-    if (active && near) v.play().catch(() => { /* autoplay blocked: poster stays */ })
-    else v.pause()
-  }, [active, near])
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) v.play().catch(() => { /* autoplay blocked: poster stays */ }); else v.pause() })
+    io.observe(v)
+    return () => io.disconnect()
+  }, [w.clip])
+  const nav = useNavigate()
+  // open the work page with the clip's current time, read at click time, so the clip continues there
+  const open = (e: React.MouseEvent) => { if (!w.clip || e.metaKey || e.ctrlKey) return; e.preventDefault(); nav(`/work/${w.id}`, { state: { t: vid.current?.currentTime ?? 0 } }) }
+  const playTo = `/work/${w.id}?play=1`
   return (
-    <article className="featured" aria-hidden={!active}>
-      <Link to={`/work/${w.id}`} className="featured-cover" tabIndex={active ? 0 : -1}>
-        {w.clip
-          ? <video ref={vid} src={asset(w.clip)} poster={w.clipPoster ? asset(w.clipPoster) : undefined} muted loop playsInline preload="metadata" />
-          : <Img path={['works', i, 'cover']} alt={w.title} />}
-      </Link>
+    <article className={`featured${w.clip ? ' featured-clip' : ''}`}>
+      <div className="featured-cover">
+        <Link to={`/work/${w.id}`} onClick={open} className="featured-cover-link" aria-label={w.title}>
+          {w.clip
+            ? <video ref={vid} src={asset(w.clip)} poster={w.clipPoster ? asset(w.clipPoster) : undefined} muted loop playsInline preload="metadata" />
+            : <Img path={['works', i, 'cover']} alt={w.title} />}
+        </Link>
+        {w.demo && <Link to={playTo} className="btn primary cover-play">▶ กดเล่น · เปิดกล้อง</Link>}
+      </div>
       <div className="featured-body">
         <div className="chips"><StatusTag w={w} />{w.genre && <em className="tag">{w.genre}</em>}</div>
         <T path={['works', i, 'title']} as="h3" />
@@ -99,51 +108,12 @@ function FeaturedCard({ w, i, active, near }: { w: Work; i: number; active: bool
           {(['role', 'team', 'duration'] as const).map((k) => w[k] ? <div key={k}><dt>{k === 'role' ? 'บทบาท' : k === 'team' ? 'ทีม' : 'ระยะเวลา'}</dt><dd>{w[k]}</dd></div> : null)}
         </dl>
         <div className="row">
-          <Link to={`/work/${w.id}`} className="btn primary" tabIndex={active ? 0 : -1}>ดูรายละเอียด<Icon name="arrow" size={16} /></Link>
+          {w.demo && <Link to={playTo} className="btn primary">▶ กดเล่น · เปิดกล้อง</Link>}
+          <Link to={`/work/${w.id}`} onClick={open} className={`btn ${w.demo ? 'secondary' : 'primary'}`}>ดูรายละเอียด<Icon name="arrow" size={16} /></Link>
           <ItemTools list={['works']} index={i} title={w.title} />
         </div>
       </div>
     </article>
-  )
-}
-
-/**
- * The featured works (site.featured, default = the first work) as a carousel: slides every REEL_MS and loops.
- * Clicking a dot holds it for REEL_HOLD_MS. Paused in edit mode.
- */
-function FeaturedReel({ items }: { items: { w: Work; i: number }[] }) {
-  const { edit } = useSite()
-  const n = items.length
-  const [at, setAt] = useState(0)
-  const [near, setNear] = useState(false)
-  const hold = useRef(0)
-  const box = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const el = box.current
-    if (!el) return
-    const io = new IntersectionObserver(([e]) => setNear(e.isIntersecting))
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-  useEffect(() => {
-    if (n < 2 || !near || edit || matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const t = setInterval(() => { if (Date.now() >= hold.current && !document.hidden) setAt((a) => (a + 1) % n) }, REEL_MS)
-    return () => clearInterval(t)
-  }, [n, near, edit])
-  const cur = Math.min(at, n - 1)
-  return (
-    <div ref={box} className="featured-reel">
-      <div className="reel-track" style={{ transform: `translateX(${-cur * 100}%)` }}>
-        {items.map(({ w, i }, k) => <FeaturedCard key={w.id} w={w} i={i} active={k === cur} near={near} />)}
-      </div>
-      {n > 1 && (
-        <div className="reel-dots" role="tablist">
-          {items.map(({ w }, k) => (
-            <button key={w.id} role="tab" aria-selected={k === cur} aria-label={w.title} className={k === cur ? 'on' : ''} onClick={() => { hold.current = Date.now() + REEL_HOLD_MS; setAt(k) }} />
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -157,7 +127,7 @@ function Works() {
     <section className="section" id="works">
       <div className="wrap">
         <SectionHead id="works" />
-        {featured.length > 0 && <FeaturedReel items={featured} />}
+        {featured.map(({ w, i }) => <FeaturedCard key={w.id} w={w} i={i} />)}
         <div className="work-grid">
           {rest.map(({ w, i }) => (
             <article key={w.id} className="work-card">

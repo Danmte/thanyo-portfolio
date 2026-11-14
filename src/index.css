@@ -331,14 +331,12 @@ blockquote cite { display: block; margin-top: 6px; color: var(--ink-3); font-sty
 .viewer { position: relative; overflow: hidden; border-radius: var(--r-xl); box-shadow: var(--card); isolation: isolate; }
 .viewer-card { height: 640px; animation: rise 0.7s var(--ease) 0.1s backwards; }
 .viewer-section { height: 660px; }
-/* featured-work carousel: big cards sliding every 2 s (Home.tsx FeaturedReel) */
-.featured-reel { position: relative; overflow: hidden; border-radius: var(--r-xl); background: var(--surface); box-shadow: var(--card); }
-.reel-track { display: flex; align-items: stretch; transition: transform 0.8s var(--ease); will-change: transform; }
-.featured-reel .featured { flex: 0 0 100%; min-width: 0; background: none; box-shadow: none; border-radius: 0; }
+/* featured works: one full card each; a work with a clip plays it as the cover, a demo gets play buttons */
+.featured + .featured { margin-top: 24px; }
+.featured-cover { position: relative; }
+.featured-cover-link { display: block; width: 100%; height: 100%; }
 .featured-cover video { width: 100%; height: 100%; object-fit: cover; display: block; background: #26252c; }
-.reel-dots { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5; display: flex; gap: 6px; padding: 6px 8px; border-radius: 99px; background: rgba(20, 20, 24, 0.35); backdrop-filter: blur(6px); }
-.reel-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 99px; background: rgba(255, 255, 255, 0.55); cursor: pointer; transition: width 0.3s var(--ease), background 0.3s; }
-.reel-dots button.on { width: 20px; background: #fff; }
+.cover-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); height: 52px; padding: 0 24px; font-size: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
 @media (prefers-reduced-motion: reduce) { .reel-track { transition: none; } }
 .viewer-stage { position: absolute; inset: 0; }
 .viewer-failed { min-height: 360px; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-2); }

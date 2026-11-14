@@ -1,22 +1,35 @@
-import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { useSite } from '../content/store'
 import { EditBlock, Img, T, useImageDrop } from '../content/Editable'
 import { Lightbox } from '../components/Lightbox'
 import { Icon } from '../components/Icon'
 import { StatusTag } from './Home'
 import { asset } from '../lib/asset'
+import type { Work as WorkT } from '../content/types'
 import { EDITION, isPersonal } from '../content/edition'
 
 const youtubeId = (url: string) => url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)?.[1]
 const PLAY_EVENT = 'work-demo-play'
+
+/** The work's clip as its cover; picks up at state.t (the time it had on the home card), so it continues. */
+function CoverClip({ w }: { w: WorkT }) {
+  const t = (useLocation().state as { t?: number } | null)?.t ?? 0
+  const v = useRef<HTMLVideoElement>(null)
+  return (
+    <video ref={v} src={asset(w.clip!)} poster={w.clipPoster ? asset(w.clipPoster) : undefined} muted loop playsInline autoPlay
+      onLoadedMetadata={() => { if (v.current && t > 0) v.current.currentTime = t }}
+      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', background: '#26252c' }} />
+  )
+}
 
 /**
  * A work with `demo` (e.g. Live Avatar): the cover shows a play button; clicking it swaps the cover for an iframe of
  * the demo with ?embed=1&autostart=1, so the camera opens right away inside the site.
  * Also starts by itself when the URL has ?play=1 (home card button) or on the window event PLAY_EVENT (sidebar button).
  */
-function DemoPlayer({ i, title, demo }: { i: number; title: string; demo: string }) {
+function DemoPlayer({ i, w, demo }: { i: number; w: WorkT; demo: string }) {
+  const title = w.title
   const [playing, setPlaying] = useState(() => /[?&]play=1/.test(location.hash))
   useEffect(() => {
     const on = () => setPlaying(true)
@@ -31,7 +44,7 @@ function DemoPlayer({ i, title, demo }: { i: number; title: string; demo: string
   )
   return (
     <div className="work-hero" style={{ position: 'relative' }}>
-      <Img path={['works', i, 'cover']} alt={title} />
+      {w.clip ? <CoverClip w={w} /> : <Img path={['works', i, 'cover']} alt={title} />}
       <button className="btn primary" onClick={() => setPlaying(true)} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', height: 56, padding: '0 28px', fontSize: 17, boxShadow: '0 10px 40px #0007' }}>▶ กดเล่น · เปิดกล้อง</button>
       <small style={{ position: 'absolute', left: 0, right: 0, bottom: 14, textAlign: 'center', color: '#cfcfd6', fontSize: 13, pointerEvents: 'none' }}>ภาพจากกล้องประมวลผลในเบราว์เซอร์ ไม่ถูกส่งไปไหน · ไม่มีกล้องก็ลองโหมดเดโมได้</small>
     </div>
@@ -75,7 +88,7 @@ export default function Work() {
         </header>
 
         {w.demo
-          ? <DemoPlayer key={w.id} i={i} title={w.title} demo={w.demo} />
+          ? <DemoPlayer key={w.id} i={i} w={w} demo={w.demo} />
           : <div className="work-hero"><Img path={['works', i, 'cover']} alt={w.title} /></div>}
 
         <div className="work-layout">
