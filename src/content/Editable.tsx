@@ -207,7 +207,7 @@ const LABEL: Record<string, string> = {
   model: 'ไฟล์โมเดล (.glb)', thumb: 'รูปไอคอน', height: 'ความสูงในฉาก', lift: 'ยกจากพื้น', spin: 'หมุนเอง', clips: 'ท่าที่โชว์ (ว่าง = ทุกท่าในไฟล์ · T-Pose = ท่ายืนตั้งต้น)', defaultClip: 'ท่าที่เล่นตอนเปิด',
   specs: 'สเปก', label: 'ชื่อช่อง', value: 'ค่า', url: 'ลิงก์', fullName: 'ชื่อ-นามสกุล', nickname: 'ชื่อเล่น', photo: 'รูปถ่าย', avatar: 'รูปโปรไฟล์', facts: 'ข้อมูลส่วนตัว',
   quote: 'คำคม', quoteBy: 'จากใคร', statement: 'Statement (ย่อหน้า)', skills: 'สกิล / โปรแกรม', education: 'การศึกษา', school: 'โรงเรียน', years: 'ช่วงชั้น', hobbies: 'งานอดิเรก',
-  reel: 'คลิปสไลด์ในหัวเว็บ', poster: 'รูปก่อนคลิปเล่น', link: 'ลิงก์ (เช่น /work/live-avatar)',
+  clip: 'คลิปแทนรูปปก (การ์ดผลงานเด่น)', clipPoster: 'รูปก่อนคลิปเล่น', featured: 'ผลงานเด่น (รหัสผลงาน)',
   eyebrow: 'หัวเล็ก', intro: 'คำอธิบาย', tag: 'ป้ายบนหัวข้อ', primary: 'ปุ่มหลัก', secondary: 'ปุ่มรอง', sub: 'คำต่อท้าย', id: 'รหัส (ใช้ในลิงก์)',
 }
 const IMAGE_KEYS = new Set(['cover', 'image', 'thumb', 'photo', 'avatar'])

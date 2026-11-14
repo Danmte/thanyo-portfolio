@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useSite } from '../content/store'
 import { AddItem, EditBlock, Img, ItemTools, T } from '../content/Editable'
 import { blank } from '../content/types'
-import type { ReelClip, Work } from '../content/types'
+import type { Work } from '../content/types'
 import { asset } from '../lib/asset'
 import { StudioView } from '../components/StudioView'
 import { Lightbox } from '../components/Lightbox'
@@ -66,106 +66,109 @@ function Hero() {
         </div>
         <div className="stats">{stats.map(([n, l]) => <div key={l}><b>{n}</b><small>{l}</small></div>)}</div>
       </div>
-      {site.hero.reel?.length ? <HeroReel clips={site.hero.reel} /> : <StudioView variant="card" />}
+      <StudioView variant="card" />
     </section>
   )
 }
 
-const REEL_MS = 2000 // time on each slide
-const REEL_HOLD_MS = 5000 // pause after the visitor touches the reel (dragging the model, a dot)
+const REEL_MS = 2000 // time on each featured slide
+const REEL_HOLD_MS = 5000 // pause after the visitor clicks a dot / touches the card
+
+/** One featured work: big cover (or its clip) + summary. `i` = index in site.works (for the editor paths). */
+function FeaturedCard({ w, i, active, near }: { w: Work; i: number; active: boolean; near: boolean }) {
+  const vid = useRef<HTMLVideoElement>(null)
+  useEffect(() => { // the clip plays only while its slide is on screen; pausing keeps its time, so it resumes there
+    const v = vid.current
+    if (!v) return
+    if (active && near) v.play().catch(() => { /* autoplay blocked: poster stays */ })
+    else v.pause()
+  }, [active, near])
+  return (
+    <article className="featured" aria-hidden={!active}>
+      <Link to={`/work/${w.id}`} className="featured-cover" tabIndex={active ? 0 : -1}>
+        {w.clip
+          ? <video ref={vid} src={asset(w.clip)} poster={w.clipPoster ? asset(w.clipPoster) : undefined} muted loop playsInline preload="metadata" />
+          : <Img path={['works', i, 'cover']} alt={w.title} />}
+      </Link>
+      <div className="featured-body">
+        <div className="chips"><StatusTag w={w} />{w.genre && <em className="tag">{w.genre}</em>}</div>
+        <T path={['works', i, 'title']} as="h3" />
+        <T path={['works', i, 'subtitle']} as="p" className="muted" />
+        <T path={['works', i, 'summary']} as="p" className="body clamp-4" multiline />
+        <dl className="mini-facts">
+          {(['role', 'team', 'duration'] as const).map((k) => w[k] ? <div key={k}><dt>{k === 'role' ? 'บทบาท' : k === 'team' ? 'ทีม' : 'ระยะเวลา'}</dt><dd>{w[k]}</dd></div> : null)}
+        </dl>
+        <div className="row">
+          <Link to={`/work/${w.id}`} className="btn primary" tabIndex={active ? 0 : -1}>ดูรายละเอียด<Icon name="arrow" size={16} /></Link>
+          <ItemTools list={['works']} index={i} title={w.title} />
+        </div>
+      </div>
+    </article>
+  )
+}
 
 /**
- * Hero carousel: the live 3D card, then each clip; slides every REEL_MS and loops.
- * A clip plays only while it is on screen and pauses when it slides away, so it resumes where it left off.
- * The 3D card stays mounted while slid out (keepAlive), so its animation continues too.
+ * The featured works (site.featured, default = the first work) as a carousel: slides every REEL_MS and loops.
+ * Clicking a dot holds it for REEL_HOLD_MS. Paused in edit mode.
  */
-function HeroReel({ clips }: { clips: ReelClip[] }) {
-  const n = clips.length + 1
+function FeaturedReel({ items }: { items: { w: Work; i: number }[] }) {
+  const { edit } = useSite()
+  const n = items.length
   const [at, setAt] = useState(0)
-  const [near, setNear] = useState(true)
-  const hold = useRef(0) // timestamp until which auto-advance waits
+  const [near, setNear] = useState(false)
+  const hold = useRef(0)
   const box = useRef<HTMLDivElement>(null)
-  const vids = useRef<(HTMLVideoElement | null)[]>([])
-
-  useEffect(() => { // 3D/clip only work while the hero is near the screen
+  useEffect(() => {
     const el = box.current
     if (!el) return
-    const io = new IntersectionObserver(([e]) => setNear(e.isIntersecting), { rootMargin: '300px' })
+    const io = new IntersectionObserver(([e]) => setNear(e.isIntersecting))
     io.observe(el)
     return () => io.disconnect()
   }, [])
   useEffect(() => {
-    if (!near || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (n < 2 || !near || edit || matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const t = setInterval(() => { if (Date.now() >= hold.current && !document.hidden) setAt((a) => (a + 1) % n) }, REEL_MS)
     return () => clearInterval(t)
-  }, [n, near])
-  useEffect(() => { // play the clip on screen, pause the rest (keeps their time)
-    vids.current.forEach((v, k) => {
-      if (!v) return
-      if (near && at === k + 1) v.play().catch(() => { /* autoplay blocked: poster stays */ })
-      else v.pause()
-    })
-  }, [at, near])
-
-  const touch = () => { hold.current = Date.now() + REEL_HOLD_MS }
-  const go = (k: number) => { touch(); setAt(k) }
+  }, [n, near, edit])
+  const cur = Math.min(at, n - 1)
   return (
-    <div ref={box} className="hero-reel" onPointerDown={touch} onWheel={touch}>
-      <div className="reel-track" style={{ transform: `translateX(${-at * 100}%)` }}>
-        <div className="reel-slide" aria-hidden={at !== 0}><StudioView variant="card" keepAlive={near} /></div>
-        {clips.map((c, k) => (
-          <div key={k} className="reel-slide reel-clip" aria-hidden={at !== k + 1}>
-            <video ref={(v) => { vids.current[k] = v }} src={asset(c.video)} poster={c.poster ? asset(c.poster) : undefined} muted loop playsInline preload="metadata" />
-            <div className="v-chip"><b>{c.title}</b>{c.sub && <small>{c.sub}</small>}</div>
-            {c.link && <Link className="btn primary reel-link" to={c.link}>ดูผลงานนี้<Icon name="arrow" size={16} /></Link>}
-          </div>
-        ))}
+    <div ref={box} className="featured-reel">
+      <div className="reel-track" style={{ transform: `translateX(${-cur * 100}%)` }}>
+        {items.map(({ w, i }, k) => <FeaturedCard key={w.id} w={w} i={i} active={k === cur} near={near} />)}
       </div>
-      <div className="reel-dots" role="tablist">
-        {Array.from({ length: n }, (_, k) => (
-          <button key={k} role="tab" aria-selected={at === k} aria-label={k === 0 ? '3D' : clips[k - 1].title} className={at === k ? 'on' : ''} onClick={() => go(k)} />
-        ))}
-      </div>
+      {n > 1 && (
+        <div className="reel-dots" role="tablist">
+          {items.map(({ w }, k) => (
+            <button key={w.id} role="tab" aria-selected={k === cur} aria-label={w.title} className={k === cur ? 'on' : ''} onClick={() => { hold.current = Date.now() + REEL_HOLD_MS; setAt(k) }} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 function Works() {
   const { site } = useSite()
-  const [first, ...rest] = site.works
+  const all = site.works.map((w, i) => ({ w, i }))
+  const ids = site.featured?.length ? site.featured : site.works.slice(0, 1).map((w) => w.id)
+  const featured = ids.map((id) => all.find((x) => x.w.id === id)).filter((x): x is { w: Work; i: number } => !!x)
+  const rest = all.filter((x) => !featured.includes(x))
   return (
     <section className="section" id="works">
       <div className="wrap">
         <SectionHead id="works" />
-        {first && (
-          <article className="featured">
-            <Link to={`/work/${first.id}`} className="featured-cover"><Img path={['works', 0, 'cover']} alt={first.title} /></Link>
-            <div className="featured-body">
-              <div className="chips"><StatusTag w={first} />{first.genre && <em className="tag">{first.genre}</em>}</div>
-              <T path={['works', 0, 'title']} as="h3" />
-              <T path={['works', 0, 'subtitle']} as="p" className="muted" />
-              <T path={['works', 0, 'summary']} as="p" className="body clamp-4" multiline />
-              <dl className="mini-facts">
-                {(['role', 'team', 'duration'] as const).map((k) => first[k] ? <div key={k}><dt>{k === 'role' ? 'บทบาท' : k === 'team' ? 'ทีม' : 'ระยะเวลา'}</dt><dd>{first[k]}</dd></div> : null)}
-              </dl>
-              <div className="row">
-                <Link to={`/work/${first.id}`} className="btn primary">ดูรายละเอียด<Icon name="arrow" size={16} /></Link>
-                <ItemTools list={['works']} index={0} title={first.title} />
-              </div>
-            </div>
-          </article>
-        )}
+        {featured.length > 0 && <FeaturedReel items={featured} />}
         <div className="work-grid">
-          {rest.map((w, n) => (
+          {rest.map(({ w, i }) => (
             <article key={w.id} className="work-card">
-              <Link to={`/work/${w.id}`} className="cover"><Img path={['works', n + 1, 'cover']} alt={w.title} /></Link>
+              <Link to={`/work/${w.id}`} className="cover"><Img path={['works', i, 'cover']} alt={w.title} /></Link>
               <div className="wc-body">
                 <Link to={`/work/${w.id}`}><h3>{w.title}</h3></Link>
                 <p className="muted">{w.genre}</p>
                 <div className="chips"><StatusTag w={w} /></div>
                 {w.demo && <Link className="btn primary" to={`/work/${w.id}?play=1`} style={{ marginTop: 12, height: 36, padding: '0 14px', fontSize: 13 }}>▶ กดเล่น · เปิดกล้อง</Link>}
               </div>
-              <ItemTools list={['works']} index={n + 1} title={w.title} />
+              <ItemTools list={['works']} index={i} title={w.title} />
             </article>
           ))}
           <AddItem list={['works']} make={blank.work} label="+ เพิ่มผลงาน" className="card-add" />

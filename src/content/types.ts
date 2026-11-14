@@ -8,6 +8,8 @@ export type Work = {
   cover: string; images: string[]; video: string; software: string[]; points: Point[]
   /** Playable page inside /public (e.g. "avatar/index.html?from=site"): the work page plays it in place of the cover. */
   demo?: string
+  /** Video shown in place of the cover on the featured card (muted, loops, resumes where it paused). */
+  clip?: string; clipPoster?: string
 }
 export type Art = { id: string; title: string; category: string; tools: string; note: string; image: string; pixel: boolean }
 export type Spec = { label: string; value: string }
@@ -28,17 +30,14 @@ export type FaceBoard = {
   cell: number[] // [u0, v0, uWidth, vHeight] of cell (0,0) in glTF UV space (v down)
   default: number[]; timeline: Record<string, number[][]>
 }
-export type ReelClip = { video: string; poster: string; title: string; sub: string; link: string }
-export type Contact ={ label: string; value: string; url: string }
+export type Contact = { label: string; value: string; url: string }
 export type Section = { eyebrow: string; title: string; intro?: string }
 export type Site = {
   site: { name: string; sub: string; role: string }
-  hero: {
-    tag: string; title: string; intro: string; primary: string; secondary: string
-    /** Clips that slide in after the 3D card in the hero (auto-advance, loop). Empty/absent = 3D card only. */
-    reel?: ReelClip[]
-  }
+  hero: { tag: string; title: string; intro: string; primary: string; secondary: string }
   sections: { works: Section; studio: Section; gallery: Section; about: Section; contact: Section }
+  /** Work ids shown as the big featured card, sliding every 2 s when there are several. Absent = the first work. */
+  featured?: string[]
   works: Work[]
   gallery: Art[]
   models: Model3D[]
