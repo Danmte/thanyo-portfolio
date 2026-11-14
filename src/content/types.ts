@@ -28,11 +28,16 @@ export type FaceBoard = {
   cell: number[] // [u0, v0, uWidth, vHeight] of cell (0,0) in glTF UV space (v down)
   default: number[]; timeline: Record<string, number[][]>
 }
-export type Contact = { label: string; value: string; url: string }
+export type ReelClip = { video: string; poster: string; title: string; sub: string; link: string }
+export type Contact ={ label: string; value: string; url: string }
 export type Section = { eyebrow: string; title: string; intro?: string }
 export type Site = {
   site: { name: string; sub: string; role: string }
-  hero: { tag: string; title: string; intro: string; primary: string; secondary: string }
+  hero: {
+    tag: string; title: string; intro: string; primary: string; secondary: string
+    /** Clips that slide in after the 3D card in the hero (auto-advance, loop). Empty/absent = 3D card only. */
+    reel?: ReelClip[]
+  }
   sections: { works: Section; studio: Section; gallery: Section; about: Section; contact: Section }
   works: Work[]
   gallery: Art[]

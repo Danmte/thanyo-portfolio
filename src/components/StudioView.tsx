@@ -33,7 +33,7 @@ function useNearView<T extends Element>(margin = '300px') {
  *  variant "card":    hero card — model chip, compact dock.
  *  variant "section": the 3D Studio section — model info + model list + full dock.
  */
-export function StudioView(props: { variant: 'card' | 'section' }) {
+export function StudioView(props: { variant: 'card' | 'section'; keepAlive?: boolean }) {
   return <ViewerBoundary><StudioViewInner {...props} /></ViewerBoundary>
 }
 
@@ -49,7 +49,8 @@ class ViewerBoundary extends Component<{ children: ReactNode }, { failed: boolea
   }
 }
 
-function StudioViewInner({ variant }: { variant: 'card' | 'section' }) {
+/** keepAlive: stay mounted while slid out of a carousel (else the model would reload and its animation restart). */
+function StudioViewInner({ variant, keepAlive }: { variant: 'card' | 'section'; keepAlive?: boolean }) {
   const { site, edit } = useSite()
   const models = site.models
   const [idx, setIdx] = useState(0)
@@ -70,7 +71,7 @@ function StudioViewInner({ variant }: { variant: 'card' | 'section' }) {
   return (
     <div ref={ref} className={`viewer viewer-${variant} bg-${opts.backdrop}`}>
       <div className="viewer-stage">
-        {near && m?.model ? <Viewport model={m} options={opts} shift={0} onApi={onApi} face={face} />
+        {(near || keepAlive) && m?.model ?<Viewport model={m} options={opts} shift={0} onApi={onApi} face={face} />
           : <div className="viewer-empty">{m && !m.model ? 'ยังไม่มีไฟล์โมเดล — กด “แก้ไข” แล้วอัปโหลด .glb' : ''}</div>}
       </div>
 

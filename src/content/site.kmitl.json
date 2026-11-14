@@ -9,7 +9,16 @@
     "title": "I make games\nand the characters\nwho live in them.",
     "intro": "นักเรียน ม.6 ที่สื่อสารผ่านเกม ออกแบบระบบและบรรยากาศใน Unity ปั้นโมเดล 3D ใน Blender วาดและ rig ตัวละคร Live2D และออกแบบตัวละครจนผลิตเป็น Art Toy",
     "primary": "ดูผลงาน",
-    "secondary": "เปิด 3D Studio"
+    "secondary": "เปิด 3D Studio",
+    "reel": [
+      {
+        "video": "media/live-avatar-reel.mp4",
+        "poster": "media/live-avatar-reel.jpg",
+        "title": "Live Avatar",
+        "sub": "Face & Body Tracking",
+        "link": "/work/live-avatar"
+      }
+    ]
   },
   "sections": {
     "works": {
