@@ -45,7 +45,7 @@ function DemoPlayer({ i, w, demo }: { i: number; w: WorkT; demo: string }) {
   return (
     <div className="work-hero" style={{ position: 'relative' }}>
       {w.clip ? <CoverClip w={w} /> : <Img path={['works', i, 'cover']} alt={title} />}
-      <button className="btn primary" onClick={() => setPlaying(true)} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', height: 56, padding: '0 28px', fontSize: 17, boxShadow: '0 10px 40px #0007' }}>▶ กดเล่น · เปิดกล้อง</button>
+      <button className="demo-start" onClick={() => setPlaying(true)} aria-label="กดเล่น · เปิดกล้อง" />
       <small style={{ position: 'absolute', left: 0, right: 0, bottom: 14, textAlign: 'center', color: '#cfcfd6', fontSize: 13, pointerEvents: 'none' }}>ภาพจากกล้องประมวลผลในเบราว์เซอร์ ไม่ถูกส่งไปไหน · ไม่มีกล้องก็ลองโหมดเดโมได้</small>
     </div>
   )

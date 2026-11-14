@@ -336,7 +336,6 @@ blockquote cite { display: block; margin-top: 6px; color: var(--ink-3); font-sty
 .featured-cover { position: relative; }
 .featured-cover-link { display: block; width: 100%; height: 100%; }
 .featured-cover video { width: 100%; height: 100%; object-fit: cover; display: block; background: #26252c; }
-.cover-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); height: 52px; padding: 0 24px; font-size: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
 @media (prefers-reduced-motion: reduce) { .reel-track { transition: none; } }
 .viewer-stage { position: absolute; inset: 0; }
 .viewer-failed { min-height: 360px; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--ink-2); }
@@ -542,3 +541,5 @@ blockquote cite { display: block; margin-top: 6px; color: var(--ink-3); font-sty
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   html { scroll-behavior: auto; }
 }
+/* work page: the whole demo cover starts the player (the big centred button was hiding the face) */
+.demo-start { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: none; cursor: pointer; }

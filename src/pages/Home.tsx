@@ -97,7 +97,6 @@ function FeaturedCard({ w, i }: { w: Work; i: number }) {
             ? <video ref={vid} src={asset(w.clip)} poster={w.clipPoster ? asset(w.clipPoster) : undefined} muted loop playsInline preload="metadata" />
             : <Img path={['works', i, 'cover']} alt={w.title} />}
         </Link>
-        {w.demo && <Link to={playTo} className="btn primary cover-play">▶ กดเล่น · เปิดกล้อง</Link>}
       </div>
       <div className="featured-body">
         <div className="chips"><StatusTag w={w} />{w.genre && <em className="tag">{w.genre}</em>}</div>
