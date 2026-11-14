@@ -1,5 +1,6 @@
 // Saving from the live site (iPad etc.): commits go straight to the GitHub repo,
 // then GitHub Actions rebuilds GitHub Pages (~1–2 min).
+import { CONTENT_FILE, EDITION } from '../content/edition'
 export const REPO = { owner: 'Danmte', name: 'thanyo-portfolio', branch: 'main' }
 const TOKEN_KEY = 'thanyo-gh-token'
 const api = (path: string) => `https://api.github.com/repos/${REPO.owner}/${REPO.name}/contents/${path}`
@@ -32,7 +33,7 @@ const utf8ToBase64 = (s: string) => { const bytes = new TextEncoder().encode(s);
 const fileToBase64 = (f: File) => new Promise<string>((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] ?? ''); fr.onerror = rej; fr.readAsDataURL(f) })
 
 export async function commitSite(token: string, json: string) {
-  await put(token, 'src/content/site.json', utf8ToBase64(json), 'Edit site content (from the web editor)')
+  await put(token, CONTENT_FILE, utf8ToBase64(json), `Edit ${EDITION} site content (from the web editor)`)
 }
 
 /** Upload a file into public/<dir>/uploads/ and return its site path. */

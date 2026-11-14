@@ -1,11 +1,10 @@
 {
   "version": "0.0.1",
   "configurations": [
-    {
-      "name": "portfolio",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
-      "port": 5173
-    }
+    { "name": "portfolio", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 },
+    { "name": "personal", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:personal"], "port": 5174 },
+    { "name": "kmitl", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:kmitl"], "port": 5176 },
+    { "name": "home","runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:home"], "port": 5175 },
+    { "name": "home-built", "runtimeExecutable": "node", "runtimeArgs": ["C:\\Users\\user\\AppData\\Local\\Temp\\claude\\4e0bf2f3724b8624\\3dd516cc-6375-4758-9803-f18419133d34\\scratchpad\\serve.mjs", "C:\\Users\\user\\OneDrive\\Project\\POrtfolio_web\\dist\\home", "5181"], "port": 5181 }
   ]
 }

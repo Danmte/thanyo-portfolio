@@ -9,6 +9,33 @@ npm run dev      # http://localhost:5173  ← แก้เว็บได้จ�
 npm run build    # ไฟล์เว็บอยู่ใน dist/ เอาไปขึ้น GitHub Pages / Netlify / itch.io ได้
 ```
 
+## 3 เวอร์ชัน: พอร์ต CAMT / พอร์ตลาดกระบัง / ส่วนตัว
+โค้ดชุดเดียวกัน แต่เนื้อหาแยกไฟล์กัน แก้อันหนึ่งไม่กระทบอีกอัน
+
+| | พอร์ต CAMT มช. | พอร์ต KMITL IT (ลาดกระบัง) | ส่วนตัว |
+|---|---|---|---|
+| เนื้อหา | `src/content/site.json` | `src/content/site.kmitl.json` | `src/content/site.personal.json` |
+| รันแก้ไข | `npm run dev` → :5173 | `npm run dev:kmitl` → :5176 | `npm run dev:personal` → :5174 |
+| build | `npm run build` → `dist/` | `npm run build:kmitl` → `dist/kmitl/` | `npm run build:personal` → `dist/me/` |
+| บน GitHub Pages | `…/` | `…/kmitl/` | `…/me/` |
+
+- `npm run build:all` build ทุกอัน (GitHub Actions ใช้คำสั่งนี้)
+- ผลงานที่มีช่อง `demo` (เช่น Live Avatar → `public/avatar/`) จะมีปุ่ม **▶ กดเล่น · เปิดกล้อง** เล่นในหน้าเว็บได้เลย · ตัว tracker ต้นฉบับอยู่ที่ `ForUse\Portfolio\WEBCAM` แก้แล้วคัดลอก `Webส่วนตัว\avatar\` มาทับ `public/avatar/`
+- `npm run build:personal-offline` → `dist/personal-offline/` = เว็บส่วนตัวที่**ดับเบิลคลิก `index.html` เปิดได้เลย** ไม่ต้องมีเซิร์ฟเวอร์ (โค้ดเป็นสคริปต์ธรรมดา + โมเดล 3D ฝังอยู่ใน `models.js`, ดู `offline.plugin.ts`) — ตัวที่ใช้ใน `ForUse\Portfolio\Webส่วนตัว`
+- เวอร์ชันส่วนตัวใช้โทนสีอุ่น (coral) ภาษาสบาย ๆ ("เรา") ไม่มีข้อมูลโรงเรียน/เป้าหมายคณะ และมีลิงก์ "Portfolio" กลับไปพอร์ตในช่องติดต่อ
+- รูป/โมเดลใน `public/` ใช้ร่วมกันทั้งสองเวอร์ชัน · draft ที่ยังไม่บันทึกแยกกัน
+
+## Home (หน้าแรกส่วนตัว — อยู่ในเครื่องเท่านั้น)
+แอปแยกใน `home/` · `npm run dev:home` (:5175) · `npm run build:home` → `dist/home/index.html` **ไฟล์เดียว** (คัดลอกไปที่ `ForUse\Portfolio\Webส่วนตัว\Home.html`)
+
+มี: ค้นหา Google / ถาม Claude (เปิด claude.ai) · เควสรายวัน (ตั้งเองได้ เลือกวันได้) + เป้าหมาย + แต้ม/เลเวล/สตรีค/แลกรางวัล · ปฏิทิน · โน้ต · คลังโมเดล (ดู .glb 3D ได้) + โปรเจกต์เกม (เชื่อมโฟลเดอร์จริงในเครื่อง) · เว็บโปรดแบ่งหมวด (การ์ดห้อยเชือก เลื่อนแบบ dynamic) · GitHub · โปรไฟล์ · ตั้งค่าความปลอดภัย
+
+ความปลอดภัย:
+- ข้อมูลทั้งหมดเข้ารหัส AES-256-GCM ด้วยรหัสผ่าน (PBKDF2 600k รอบ) เก็บใน IndexedDB ของเบราว์เซอร์ — **ลืมรหัส = กู้ไม่ได้** (สำรองไฟล์ได้ที่หน้าตั้งค่า)
+- โค้ดทั้งหมดฝังในไฟล์เดียว + CSP อนุญาตเฉพาะสคริปต์ที่ hash ตรง, Trusted Types, ติดต่อได้แค่ `api.github.com`
+- ล็อกอัตโนมัติเมื่อไม่ใช้, ใส่รหัสผิดต้องรอนานขึ้น, ลิงก์เปิดได้เฉพาะ http/https
+- ไฟล์ที่เกี่ยวข้อง: `vite.home.config.ts` (build + CSP), `home/src/lib/vault.ts` (เข้ารหัส), `home/src/lib/folders.ts` (โฟลเดอร์ในเครื่อง)
+
 ## แก้เว็บเองในเบราว์เซอร์
 1. `npm run dev` แล้วเปิด http://localhost:5173
 2. กด **แก้ไขเว็บ** มุมขวาบน

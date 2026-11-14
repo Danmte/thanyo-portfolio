@@ -4,6 +4,7 @@ import { seedSite } from './types'
 import type { Site } from './types'
 import { checkToken, commitSite, commitUpload, getToken, setToken } from '../lib/github'
 import { addPreview } from '../lib/asset'
+import { CONTENT_FILE, storeKey } from './edition'
 
 declare const __BUILD_TIME__: number
 
@@ -31,9 +32,10 @@ type Ctx = {
 }
 
 const C = createContext<Ctx | null>(null)
-const DRAFT = 'thanyo-site-draft'
-const EDIT = 'thanyo-edit'
-const PENDING = 'thanyo-site-pending' // saved to GitHub but the site hasn't been rebuilt yet
+const DRAFT = storeKey('thanyo-site-draft')
+const EDIT = storeKey('thanyo-edit')
+const PENDING = storeKey('thanyo-site-pending') // saved to GitHub but the site hasn't been rebuilt yet
+const FILE_NAME = CONTENT_FILE.split('/').pop() ?? 'site.json'
 
 const getAt = (obj: unknown, path: Path) => path.reduce<unknown>((o, k) => (o == null ? o : (o as Record<string, unknown>)[k as string]), obj)
 function setAt<T>(obj: T, path: Path, value: unknown): T {
@@ -76,11 +78,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
 
   const download = useCallback(() => {
     const blob = new Blob([JSON.stringify(site, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'site.json'; a.click(); URL.revokeObjectURL(a.href)
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = FILE_NAME; a.click(); URL.revokeObjectURL(a.href)
   }, [site])
 
   const save = useCallback(async () => {
-    if (mode === 'none') { download(); flash('ดาวน์โหลด site.json แล้ว — เอาไปวางแทน src/content/site.json'); return }
+    if (mode === 'none') { download(); flash(`ดาวน์โหลด ${FILE_NAME} แล้ว — เอาไปวางแทน ${CONTENT_FILE}`); return }
     setStatus('กำลังบันทึก…')
     if (mode === 'github') {
       // images added before GitHub was connected are still data: URLs — upload them as files first

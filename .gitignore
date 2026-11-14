@@ -25,3 +25,7 @@ dist-ssr
 
 # local CMS backups
 .cms-backup
+
+# private home page (README: local only)
+/home/
+/vite.home.config.ts

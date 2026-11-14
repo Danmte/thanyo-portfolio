@@ -5,6 +5,7 @@ import type { Path } from './store'
 import { Icon } from '../components/Icon'
 import { asset } from '../lib/asset'
 import { REPO } from '../lib/github'
+import { CONTENT_FILE } from './edition'
 
 const str = (v: unknown) => (v == null ? '' : String(v))
 
@@ -158,7 +159,7 @@ export function EditBar() {
         <span className="grow" />
         {mode === 'none' && <button type="button" className="eb-btn" onClick={() => setConnecting(true)}>เชื่อม GitHub</button>}
         {mode === 'github' && <button type="button" className="eb-btn ghost" onClick={() => { if (confirm('ยกเลิกการเชื่อม GitHub บนเครื่องนี้?')) disconnect() }}>GitHub ✓</button>}
-        <button type="button" className="eb-btn" onClick={download} title="ดาวน์โหลดไฟล์ข้อมูลทั้งหมด">site.json</button>
+        <button type="button" className="eb-btn" onClick={download} title="ดาวน์โหลดไฟล์ข้อมูลทั้งหมด">{CONTENT_FILE.split('/').pop()}</button>
         <button type="button" className="eb-btn" onClick={() => { if (confirm('ยกเลิกทุกการแก้ไขที่ยังไม่บันทึก?')) discard() }} disabled={!dirty}>ยกเลิก</button>
         <button type="button" className="eb-btn primary" onClick={save} disabled={!dirty}>{canSave ? 'บันทึก' : 'บันทึก (ดาวน์โหลด)'}</button>
         <button type="button" className="eb-btn ghost" onClick={() => setEdit(false)}>ออก</button>
@@ -201,7 +202,7 @@ function ConnectDialog({ onClose }: { onClose: () => void }) {
 
 const LABEL: Record<string, string> = {
   title: 'ชื่อ / หัวข้อ', subtitle: 'คำโปรย', number: 'ลำดับ', status: 'สถานะ', tone: 'สีป้ายสถานะ', genre: 'แนว', duration: 'ระยะเวลา', role: 'บทบาท', team: 'ทีม',
-  summary: 'รายละเอียด', cover: 'รูปปก', images: 'รูปเพิ่มเติม', video: 'ลิงก์วิดีโอ (YouTube)', software: 'โปรแกรมที่ใช้', points: 'หัวข้อย่อย', code: 'กล่องโค้ด/ไดอะแกรม', body: 'เนื้อหา',
+  summary: 'รายละเอียด', cover: 'รูปปก', images: 'รูปเพิ่มเติม', video: 'ลิงก์วิดีโอ (YouTube)', demo: 'หน้าเล่นได้ (ไฟล์ใน public เช่น avatar/index.html?from=site)',software: 'โปรแกรมที่ใช้', points: 'หัวข้อย่อย', code: 'กล่องโค้ด/ไดอะแกรม', body: 'เนื้อหา',
   category: 'หมวด', tools: 'เครื่องมือ', note: 'คำอธิบาย', image: 'รูป', pixel: 'พิกเซลอาร์ต (ไม่เบลอ)', kind: 'ประเภท', name: 'ชื่อ', description: 'คำอธิบาย',
   model: 'ไฟล์โมเดล (.glb)', thumb: 'รูปไอคอน', height: 'ความสูงในฉาก', lift: 'ยกจากพื้น', spin: 'หมุนเอง', clips: 'ท่าที่โชว์ (ว่าง = ทุกท่าในไฟล์ · T-Pose = ท่ายืนตั้งต้น)', defaultClip: 'ท่าที่เล่นตอนเปิด',
   specs: 'สเปก', label: 'ชื่อช่อง', value: 'ค่า', url: 'ลิงก์', fullName: 'ชื่อ-นามสกุล', nickname: 'ชื่อเล่น', photo: 'รูปถ่าย', avatar: 'รูปโปรไฟล์', facts: 'ข้อมูลส่วนตัว',

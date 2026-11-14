@@ -5,7 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:personal": "vite --mode personal",
     "build": "tsc -b && vite build",
+    "dev:kmitl": "vite --mode kmitl",
+    "build:kmitl": "vite build --mode kmitl",
+    "build:kmitl-offline": "vite build --mode kmitl-offline",
+    "build:personal": "vite build --mode personal",
+    "build:personal-offline": "vite build --mode personal-offline",
+    "dev:home": "vite --config vite.home.config.ts",
+    "build:home": "tsc -b && vite build --config vite.home.config.ts",
+    "build:all": "npm run build && npm run build:personal && npm run build:kmitl",
     "lint": "oxlint",
     "preview": "vite preview"
   },

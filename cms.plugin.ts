@@ -12,8 +12,8 @@ import type { Plugin } from 'vite'
 const ALLOWED = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.glb', '.gltf', '.mp4', '.webm'])
 const MAX = 80 * 1024 * 1024
 
-export function cms(root: string): Plugin {
-  const content = path.join(root, 'src/content/site.json')
+export function cms(root: string, file = 'src/content/site.json'): Plugin {
+  const content = path.join(root, file)
   const backups = path.join(root, '.cms-backup')
   const read = (req: import('node:http').IncomingMessage) => new Promise<Buffer>((resolve, reject) => {
     const chunks: Buffer[] = []; let size = 0
@@ -33,9 +33,9 @@ export function cms(root: string): Plugin {
             const data = JSON.parse((await read(req)).toString('utf8'))
             if (!data || typeof data !== 'object' || !Array.isArray(data.works)) return send(400, { error: 'not a site.json' })
             fs.mkdirSync(backups, { recursive: true })
-            if (fs.existsSync(content)) fs.copyFileSync(content, path.join(backups, `site-${Date.now()}.json`))
+            if (fs.existsSync(content)) fs.copyFileSync(content, path.join(backups, `${path.basename(content, '.json')}-${Date.now()}.json`))
             const old = fs.readdirSync(backups).filter((f) => f.endsWith('.json')).sort()
-            old.slice(0, Math.max(0, old.length - 10)).forEach((f) => fs.unlinkSync(path.join(backups, f)))
+            old.slice(0, Math.max(0, old.length - 20)).forEach((f) => fs.unlinkSync(path.join(backups, f)))
             fs.writeFileSync(content, JSON.stringify(data, null, 2) + '\n', 'utf8')
             return send(200, { ok: true })
           }

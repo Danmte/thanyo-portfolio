@@ -6,8 +6,37 @@ import { Lightbox } from '../components/Lightbox'
 import { Icon } from '../components/Icon'
 import { StatusTag } from './Home'
 import { asset } from '../lib/asset'
+import { EDITION, isPersonal } from '../content/edition'
 
 const youtubeId = (url: string) => url.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/)?.[1]
+const PLAY_EVENT = 'work-demo-play'
+
+/**
+ * A work with `demo` (e.g. Live Avatar): the cover shows a play button; clicking it swaps the cover for an iframe of
+ * the demo with ?embed=1&autostart=1, so the camera opens right away inside the site.
+ * Also starts by itself when the URL has ?play=1 (home card button) or on the window event PLAY_EVENT (sidebar button).
+ */
+function DemoPlayer({ i, title, demo }: { i: number; title: string; demo: string }) {
+  const [playing, setPlaying] = useState(() => /[?&]play=1/.test(location.hash))
+  useEffect(() => {
+    const on = () => setPlaying(true)
+    addEventListener(PLAY_EVENT, on)
+    return () => removeEventListener(PLAY_EVENT, on)
+  }, [])
+  const src = asset(demo) + (demo.includes('?') ? '&' : '?') + 'embed=1&autostart=1'
+  if (playing) return (
+    <div className="work-hero" style={{ aspectRatio: innerWidth < 700 ? '4/5' : '16/9', background: '#2b2a33' }}>
+      <iframe src={src} title={title} allow="camera; microphone; fullscreen; autoplay" allowFullScreen style={{ width: '100%', height: '100%', border: 0, display: 'block' }} />
+    </div>
+  )
+  return (
+    <div className="work-hero" style={{ position: 'relative' }}>
+      <Img path={['works', i, 'cover']} alt={title} />
+      <button className="btn primary" onClick={() => setPlaying(true)} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', height: 56, padding: '0 28px', fontSize: 17, boxShadow: '0 10px 40px #0007' }}>▶ กดเล่น · เปิดกล้อง</button>
+      <small style={{ position: 'absolute', left: 0, right: 0, bottom: 14, textAlign: 'center', color: '#cfcfd6', fontSize: 13, pointerEvents: 'none' }}>ภาพจากกล้องประมวลผลในเบราว์เซอร์ ไม่ถูกส่งไปไหน · ไม่มีกล้องก็ลองโหมดเดโมได้</small>
+    </div>
+  )
+}
 
 export default function Work() {
   const { id } = useParams()
@@ -45,11 +74,13 @@ export default function Work() {
           </div>
         </header>
 
-        <div className="work-hero"><Img path={['works', i, 'cover']} alt={w.title} /></div>
+        {w.demo
+          ? <DemoPlayer key={w.id} i={i} title={w.title} demo={w.demo} />
+          : <div className="work-hero"><Img path={['works', i, 'cover']} alt={w.title} /></div>}
 
         <div className="work-layout">
           <div className="work-main">
-            <h2 className="h-sm">งานนี้คืออะไร และหนูทำส่วนไหน</h2>
+            <h2 className="h-sm">งานนี้คืออะไร และ{isPersonal ? 'เรา' : EDITION === 'kmitl' ? 'ฉัน' : 'หนู'}ทำส่วนไหน</h2>
             <T path={['works', i, 'summary']} as="p" className="body-l" multiline />
             {yt && (
               <div className="video"><iframe src={`https://www.youtube-nocookie.com/embed/${yt}`} title={`${w.title} video`} allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
@@ -70,7 +101,9 @@ export default function Work() {
           </div>
           <aside className="work-side">
             <dl className="facts-card">{facts.map(([label, k]) => (w[k] || edit) ? <div key={k}><dt>{label}</dt><dd><T path={['works', i, k]} placeholder="—" /></dd></div> : null)}</dl>
-            {w.video && !yt && <a className="btn secondary block" href={w.video} target="_blank" rel="noreferrer">ดูวิดีโอ<Icon name="link" size={14} /></a>}
+            {w.demo && <button className="btn primary block" style={{ marginTop: 12, width: '100%' }} onClick={() => { dispatchEvent(new Event(PLAY_EVENT)); scrollTo({ top: 0, behavior: 'smooth' }) }}>▶ เล่นตรงนี้ · เปิดกล้อง</button>}
+            {w.demo && <a className="btn secondary block" href={asset(w.demo)} style={{ marginTop: 8 }}>เปิดเต็มหน้า<Icon name="link" size={14} /></a>}
+            {w.video && !yt &&<a className="btn secondary block" href={w.video} target="_blank" rel="noreferrer">ดูวิดีโอ<Icon name="link" size={14} /></a>}
           </aside>
         </div>
 
@@ -90,7 +123,7 @@ export default function Work() {
           <Link to={`/work/${next.id}`} className="next"><small>ถัดไป</small><b>{next.title}</b></Link>
         </nav>
       </div>
-      {view !== null && <Lightbox index={view} setIndex={setView} items={images.map((src, k) => ({ src, title: `${w.title} — ${k + 1}` }))} />}
+      {view !== null && <Lightbox index={view} setIndex={setView} items={images.map((src, k) => ({ src, title: `${w.title} · ${k + 1}`}))} />}
     </article>
   )
 }

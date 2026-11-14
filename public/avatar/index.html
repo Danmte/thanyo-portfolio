@@ -1,0 +1,2117 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live Avatar - Thanyo</title><link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; color:#fff;
+    font-family: "Helvetica Neue", Arial, sans-serif; }
+  body { background: radial-gradient(ellipse at 50% 40%, #16161a 0%, #000 70%); }
+  #c { position:fixed; inset:0; width:100vw; height:100vh; display:block; touch-action:none; }
+  #v { position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; }
+  #bg { position:fixed; z-index:0; pointer-events:none; }
+  #bg[hidden] { display:none; }
+  #pip { position:fixed; left:12px; bottom:12px; width:240px; z-index:3; border:1px solid #333; background:#000; }
+  #pip[hidden] { display:none; }
+  #hud { position:fixed; right:14px; top:12px; z-index:3; font:10px/1.7 ui-monospace, Consolas, monospace;
+    letter-spacing:.18em; color:#777; text-align:right; white-space:pre; pointer-events:none; }
+  #hud b { color:#fff; font-weight:400; }
+  #scanBox { position:fixed; left:264px; bottom:12px; width:280px; height:280px; z-index:3; border:1px solid #333; background:rgba(0,0,0,.75); }
+  #scanBox[hidden] { display:none; }
+  #scanBox canvas { width:100%; height:100%; display:block; }
+  #scanBox span { position:absolute; left:8px; top:6px; font:9px ui-monospace, Consolas, monospace; letter-spacing:.16em; color:#666; }
+  @media (max-width: 700px) { #scanBox { left:auto; right:12px; bottom:auto; top:120px; width:160px; height:160px; } }
+  #bars { position:fixed; right:14px; bottom:12px; z-index:3; width:230px; max-height:calc(100vh - 180px); overflow:auto;
+    font:10px/1.5 ui-monospace, Consolas, monospace; letter-spacing:.06em; color:#888; background:rgba(0,0,0,.6); border:1px solid #222; padding:8px 10px; }
+  #bars[hidden] { display:none; }
+  #bars .b { display:grid; grid-template-columns:96px 1fr 30px; gap:6px; align-items:center; }
+  #bars .b i { display:block; height:5px; background:#222; }
+  #bars .b i u { display:block; height:100%; background:#fff; }
+  #bars .b.off { opacity:.35; }
+  #toast { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:6; font:11px ui-monospace, Consolas, monospace;
+    letter-spacing:.2em; color:#fff; background:rgba(0,0,0,.7); border:1px solid #333; padding:8px 14px; opacity:0; transition:opacity .25s; pointer-events:none; }
+  #toast.on { opacity:1; }
+  #intro { position:fixed; inset:0; z-index:5; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:18px; background:rgba(0,0,0,.82); text-align:center; padding:16px; }
+  #intro[hidden] { display:none; }
+  #intro h1 { font-weight:300; font-size:clamp(32px,6vw,72px); letter-spacing:-.03em; margin:0; }
+  #intro p { color:#8a8a8a; font-size:14px; max-width:520px; margin:0; line-height:1.7; }
+  .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .btns a[hidden] { display:none; }
+  .btns a { text-decoration:none; }
+  #intro { overflow:auto; }
+  @media (max-height: 480px), (max-width: 560px) {
+    #intro { gap:10px; justify-content:safe center; padding-top:48px; }
+    #intro h1 { font-size:28px; } #intro > p { display:none; } #intro .tiny { display:none; }
+    .btns button, .btns label, .btns a { padding:8px 14px !important; font-size:12px !important; }
+    #status.err { font-size:11px; }
+  }
+  #status.err { color:#ffb4a8; max-width:560px; line-height:1.7; font-size:13px; font-family:inherit; }
+  .btns button, .btns label, .btns a { font:inherit; font-size:14px; padding:12px 24px; border-radius:999px; border:1px solid #fff;
+    background:#fff; color:#000; cursor:pointer; }
+  .btns .ghost { background:transparent; color:#fff; }
+  .btns button:disabled { opacity:.35; cursor:default; }
+  #status { font:12px ui-monospace, Consolas, monospace; color:#aaa; min-height:1.4em; }
+  .tiny { position:absolute; font:10px ui-monospace, Consolas, monospace; letter-spacing:.2em; color:#555; }
+
+  /* ── inspector ── */
+  #insp { position:fixed; top:44px; left:12px; width:300px; max-height:calc(100vh - 230px); overflow:auto; z-index:4;
+    background:rgba(0,0,0,.85); border:1px solid #333; color:#ddd;
+    font:11px/1.4 ui-monospace, Consolas, monospace; letter-spacing:.04em; }
+  #insp[hidden] { display:none; }
+  #insp .ih { position:sticky; top:0; background:#000; display:flex; justify-content:space-between; padding:9px 10px;
+    border-bottom:1px solid #333; letter-spacing:.2em; z-index:1; }
+  #insp details { border-bottom:1px solid #222; }
+  #insp summary { cursor:pointer; padding:8px 10px; color:#fff; letter-spacing:.18em; list-style:none; }
+  #insp summary::before { content:'+ '; color:#666; }
+  #insp details[open] summary::before { content:'– '; }
+  #insp .row { padding:4px 10px 8px; }
+  #insp .row .top { display:flex; justify-content:space-between; gap:8px; }
+  #insp .row .k { color:#bbb; }
+  #insp .row .val { color:#fff; }
+  #insp .row .hint { color:#666; font-size:10px; }
+  #insp input[type=range] { width:100%; margin:4px 0 0; accent-color:#fff; height:14px; }
+  #insp select { width:100%; margin-top:4px; background:#111; color:#fff; border:1px solid #333; font:inherit; padding:3px; }
+  #insp input[type=checkbox] { accent-color:#fff; }
+  #insp .ib { display:flex; flex-wrap:wrap; gap:6px; padding:10px; }
+  #insp .ib button, #inspBtn { font:inherit; font-size:10px; letter-spacing:.14em; background:transparent; color:#ddd;
+    border:1px solid #444; padding:6px 8px; cursor:pointer; }
+  #insp .ib button:hover, #topbar > *:hover { border-color:#fff; color:#fff; }
+  #insp summary small { color:#555; font-size:9px; letter-spacing:.12em; margin-left:6px; }
+  #itabs { display:flex; border-bottom:1px solid #333; position:sticky; top:35px; background:#000; z-index:1; }
+  #itabs button { flex:1; font:inherit; font-size:11px; color:#888; background:none; border:0; border-bottom:2px solid transparent; padding:8px 2px; cursor:pointer; }
+  #itabs button.on { color:#fff; border-bottom-color:#fff; }
+  #iSearch { display:block; width:calc(100% - 20px); margin:8px 10px; background:#111; color:#fff; border:1px solid #333; font:inherit; padding:6px 8px; }
+  #insp .row[hidden], #insp details[hidden] { display:none; }
+  /* ── top bar + key help ── */
+  #topbar { position:fixed; top:10px; left:12px; z-index:6; display:flex; gap:6px; }
+  #topbar > * { font:10px ui-monospace, Consolas, monospace; letter-spacing:.14em; color:#ddd; background:rgba(0,0,0,.45);
+    border:1px solid #444; padding:6px 9px; cursor:pointer; text-decoration:none; }
+  #topbar [hidden] { display:none; }
+  #topbar > * { white-space:nowrap; }
+  @media (max-width: 700px) { #topbar > * { padding:5px 6px; letter-spacing:.06em; } #hud { display:none; } }
+  #keys { position:fixed; inset:0; z-index:7; background:rgba(0,0,0,.78); display:flex; flex-direction:column; align-items:center;
+    justify-content:center; padding:20px; overflow:auto; }
+  #keys[hidden] { display:none; }
+  #keys .kh { width:min(920px,100%); display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;
+    font:12px ui-monospace, Consolas, monospace; letter-spacing:.3em; color:#aaa; }
+  #keys .kh button { font:inherit; font-size:10px; color:#ddd; background:none; border:1px solid #444; padding:6px 10px; cursor:pointer; }
+  #keys .kgrid { width:min(920px,100%); display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+  #keys section { border:1px solid #2a2a2a; background:rgba(10,10,12,.9); padding:12px 14px; }
+  #keys h3 { margin:0 0 10px; font-size:13px; font-weight:500; color:#fff; }
+  #keys h3 small { color:#666; font-weight:400; }
+  #keys p { margin:0 0 7px; font-size:13px; color:#aaa; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  kbd { font:11px ui-monospace, Consolas, monospace; color:#fff; background:#1b1b1f; border:1px solid #444; border-bottom-width:2px;
+    border-radius:4px; padding:2px 6px; min-width:12px; text-align:center; }
+</style>
+<script>window.AVATAR_SITE = 1</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<video id="v" playsinline muted></video>
+<canvas id="bg" hidden></canvas>
+<canvas id="c"></canvas>
+<canvas id="pip" width="320" height="240" hidden></canvas>
+<div id="hud"></div>
+<div id="toast"></div>
+<div id="bars" hidden></div>
+<div id="scanBox" hidden><canvas id="scan" width="600" height="600"></canvas><span>SCAN · FACE MESH 478 · POSE 33 · HAND 21×2</span></div>
+
+<div id="topbar">
+  <a id="backBtn" href="../index.html#/work/live-avatar" hidden>← กลับเว็บ</a>
+  <button id="inspBtn">ตั้งค่า · I</button>
+  <button id="keysBtn">คีย์ลัด · ?</button>
+  <button id="fsBtn">เต็มจอ · F</button>
+</div>
+<div id="keys" hidden>
+  <div class="kh"><span>คีย์ลัด</span><button id="keysClose">ปิด · Esc</button></div>
+  <div class="kgrid">
+    <section><h3>หน้าจอ & ตั้งค่า</h3>
+      <p><kbd>I</kbd> เปิด/ปิดตั้งค่า</p><p><kbd>?</kbd> คีย์ลัด (หน้านี้)</p><p><kbd>Esc</kbd> ปิดหน้าต่าง</p>
+      <p><kbd>F</kbd> เต็มจอ (ตอนใช้กล้อง)</p>
+      <p><kbd>V</kbd> ภาพกล้องมุมซ้ายล่าง</p><p><kbd>G</kbd> แผงสแกน 3D</p></section>
+    <section><h3>กล้อง & การแทร็ก</h3>
+      <p><kbd>C</kbd> calibrate (มองตรงแล้วกด)</p><p><kbd>M</kbd> กระจก ซ้าย/ขวา</p>
+      <p><kbd>O</kbd> สิงร่าง ↔ สตูดิโอ</p><p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> มุมกล้อง ครึ่งอก / ครึ่งตัว / เต็มตัว</p>
+      <p><kbd>ลากเมาส์</kbd> หมุนมุมมอง (โหมดสตูดิโอ)</p></section>
+    <section><h3>เดโม · หน้า <small>(ไม่ใช้กล้อง)</small></h3>
+      <p><kbd>เมาส์</kbd> หันหัว + กลอกตา</p><p><kbd>Space</kbd> พูด (สระ A I U E O)</p>
+      <p><kbd>S</kbd> ยิ้ม</p><p><kbd>H</kbd> ตายิ้ม ^ ^</p><p><kbd>E</kbd> หลับตา</p><p><kbd>X</kbd> ตาโต</p>
+      <p><kbd>B</kbd> เลิกคิ้ว</p><p><kbd>P</kbd> แก้มพอง</p><p><kbd>T</kbd> แลบลิ้น</p><p><kbd>Z</kbd> เม้มปาก</p><p><kbd>K</kbd> ปากเสียง U</p></section>
+    <section><h3>เดโม · ตัว <small>(ไม่ใช้กล้อง)</small></h3>
+      <p><kbd>W</kbd> ยกแขนสองข้าง</p><p><kbd>F</kbd> กำมือ</p><p><kbd>U</kbd> ยักไหล่</p><p><kbd>Y</kbd> ยักไหล่ซ้าย</p>
+      <p><kbd>N</kbd> โน้มตัวไปหน้า</p><p><kbd>Q</kbd> เอียงตัว</p></section>
+  </div>
+</div>
+<div id="insp" hidden>
+  <div class="ih"><span>ตั้งค่า · INSPECTOR</span><span>I / Esc = ปิด</span></div>
+  <div id="itabs"></div>
+  <input id="iSearch" type="search" placeholder="ค้นหา เช่น ผม, แขน, blink…" autocomplete="off">
+  <div id="groups"></div>
+  <div class="ib">
+    <button id="iCal">CALIBRATE · C</button>
+    <button id="iReset">RESET DEFAULTS</button>
+    <button id="iExport">EXPORT JSON</button>
+    <button id="iImport">IMPORT JSON</button>
+    <input type="file" id="iFile" accept=".json,application/json" hidden>
+  </div>
+</div>
+
+<div id="intro">
+  <span class="tiny" style="left:16px;bottom:14px">AVATAR / TRACK</span>
+  <span class="tiny" style="right:16px;top:14px">SYS 05</span>
+  <h1>Avatar / Track</h1>
+  <p>หัว · ตา · ปาก · คิ้ว · ตัว · แขน · นิ้ว ขยับตามกล้อง<br>
+     นั่งให้เห็นหัวถึงเอว แล้วกด <b>C</b> ตอนมองตรง = calibrate<br>
+     <b>I</b> = ตั้งค่า · <b>?</b> = คีย์ลัดทั้งหมด · <b>M</b> = กระจก · <b>1/2/3</b> = มุมกล้อง</p>
+  <div class="btns">
+    <button id="goCam" disabled>▶ เปิดกล้อง + แทร็ก</button>
+    <button id="goDemo" class="ghost" disabled>ลองไม่ใช้กล้อง</button>
+    <a id="newTab" class="ghost" target="_blank" rel="noopener" hidden>เปิดในแท็บใหม่ ↗</a>
+    <label class="ghost" id="pickLbl" hidden>เลือกไฟล์ .glb<input type="file" id="pick" accept=".glb,.gltf" hidden></label>
+  </div>
+  <div id="status">กำลังโหลดโมเดล…</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ═════════════════════════ config (Inspector) ═════════════════════════
+const DEF = {
+  // general
+  model: 'sheep', mirror: true, camFrame: 'half', shading: 'blender',
+  // hair spring (bones named cc_hair_* or Hair_*)
+  hairSpring: true, hairStiff: .06, hairDrag: .10, hairGravity: 2.5, hairInertia: 1, hairHeadRadius: .085,
+  ribbonStiff: .012, ribbonDrag: .07, ribbonGravity: 6, ribbonInertia: 1.1, showWeapon: false, showPip: true, idleBreath: true,
+  // tracking
+  trackFace: true, trackPose: true, trackHands: true, poseModel: 'full', handsEvery: 2, delegate: 'GPU',
+  // head
+  headGain: 1, neckShare: .35, headYawSign: 1, headPitchSign: 1, headRollSign: 1, headPitchOffset: 0, headLimit: 1.1,
+  // body
+  torsoRollGain: 1, torsoYawGain: .8, torsoLimit: .6, swayFromHead: .25,
+  // arms
+  trackHips: true, hipRollGain: 1, hipYawGain: .8,
+  // upper-body detail
+  leanSource: 'auto', leanPitchGain: 1, leanSideGain: 1, leanLimit: .5, shrugGain: 1.4, shrugMax: .35,
+  // legs are off on purpose (Thanyo: upper body first); code kept, no root motion
+  trackLegs: false, legVisMin: .6, legZScale: .6, legSpeed: 18, rootMoveGain: 0, grounding: false,
+  armVisMin: .4, armVisHyst: .2, armHold: .5, armHandBoost: .35, armGate: 1.3,
+  elbowPlane: true, upperTwistShare: .5, shoulderRaiseExtra: .2,
+  armCollide: true, armMarginElbow: .05, armMarginWrist: .035, armMarginHand: .018,
+  hairHandCollide: true, hairHandRadius: .05, hairHandDrag: .8,
+  armZScale: .7, armDownAngle: 1.15, handRotFromHand: true, shoulderShare: .25,
+  // look (shading 'blender' = texture × soft toon ramp + inverted-hull outline, same as Model/clay_outline.py)
+  castShadows: true, castShadowAmt: .85, skinning: 'dqs',
+  outline: false, outlineWidth: .0012, toonShadow: '#ccbdcc', toonSoftLo: .05, toonSoftHi: .6,
+  // scan view (face mesh + body skeleton in 3D)
+  scanView: false, scanFaceMesh: true,
+  // possession view: webcam video behind, 3D camera = the webcam's perspective, avatar placed on the user's head
+  viewMode: 'possess', camFov: 63, possessBg: 'solid', bgColor: '#2b2a33', possessScale: 1, faceToHeadY: -.07, faceToHeadZ: -.035, possessSpeed: 18,
+  // fingers
+  fingerGain: 1.1, thumbGain: .8, curlDeadzone: .15, fingerFlip: false,
+  // face
+  blinkLow: .25, blinkHigh: .62, linkBlink: false, autoBlink: true, jawGain: 1.4, mouthShapes: true, smileGain: 1.3,
+  happyGain: 1.4, cheekGain: 1.4, showFaceBars: false, uGain: 1.2, pressGain: 1.3,
+  faceCurve: .7, faceBoost: 1.15, faceMax: 1.3, faceSpring: true, faceSpringHz: 6, faceSpringDamp: .55,
+  // lipsync / tongue
+  mouthMode: 'vowel', vowelGain: 1.3, micLipsync: false, micGain: 1.2,
+  tongueDetect: true, tongueLow: .05, tongueHigh: .13, tongueGain: 1,
+  browGain: 1.6, eyeWideGain: 1, squintGain: .4, gazeGain: 1.4, flipGazeX: false, swapFaceLR: false,
+  // smoothing
+  rotSpeed: 24, armSpeed: 22, faceSpeed: 30, blinkSpeed: 45, fingerSpeed: 26,
+  filter: 'oneEuro', euroMinCutoff: 1.5, euroBeta: .6,
+  // motion prediction + human limits
+  predict: true, predAlpha: .55, predBeta: .2, predDamp: 4, predLead: .08, predGateFrames: 3,
+  maxHeadSpeed: 9, maxArmSpeed: 18, maxTorsoSpeed: 5, elbowMax: 2.8,
+  // background: clean = remove the real person (remembered room), blur = blur the person
+  segEvery: 2,
+  // hands (detail)
+  fingerMode: 'aim', twistShare: .5, handFlipX: false, handFlipZ: false,
+};
+const SCHEMA = [
+  ['MODEL', [
+    ['model', ['sheep', 'undertaker'], 'โมเดล (โหลดใหม่ทันที)'],
+    ['shading', ['blender', 'flat', 'toon', 'standard'], 'blender = แบบ clay_outline ใน Blender · flat = texture ล้วน'],
+    ['showWeapon', 'bool', 'โชว์ดาบ'],
+    ['idleBreath', 'bool', 'หายใจเบาๆ'],
+  ]],
+  ['CAMERA', [
+    ['viewMode', ['possess', 'studio'], 'possess = สิงร่าง: มุมเดียวกับกล้องจริง วางทับตัวเรา · studio = มุมกล้องหมุนได้ (คีย์ O)'],
+    ['possessBg', ['solid', 'clean', 'blur', 'video', 'dim', 'none'], 'พื้นหลังโหมดสิงร่าง: solid = สีเรียบ · clean = ลบคนจริง · blur · video · dim · ดำ'],
+    ['bgColor', ['#2b2a33', '#111114', '#e9e7ee', '#d9e3ec', '#f3e6ea', '#00b140'], 'สีพื้นหลัง (#00b140 = กรีนสกรีนไว้คีย์ใน OBS)'],
+    ['segEvery', 1, 4, 1, 'แยกคนทุกกี่เฟรม (สูง = เร็วขึ้น)'],
+    ['camFov', 30, 90, 1, 'FOV แนวตั้งของกล้อง (MediaPipe ใช้ 63)'],
+    ['possessScale', .6, 1.6, .01, 'ขนาดโมเดลเทียบตัวจริง'],
+    ['faceToHeadY', -.2, .1, .005, 'ชดเชยตำแหน่งหัว ขึ้น-ลง (m)'], ['faceToHeadZ', -.15, .1, .005, 'ชดเชยหัว หน้า-หลัง (m)'],
+    ['mirror', 'bool', 'เหมือนส่องกระจก (ยกมือขวา → โมเดลยกฝั่งขวาจอ)'],
+    ['camFrame', ['bust', 'half', 'full'], 'มุมกล้อง (คีย์ 1/2/3)'],
+    ['showPip', 'bool', 'ภาพกล้องมุมซ้ายล่าง (V)'],
+  ]],
+  ['TRACKING', [
+    ['trackFace', 'bool', 'หน้า+หัว'], ['trackPose', 'bool', 'ตัว+แขน'], ['trackHands', 'bool', 'นิ้ว+ข้อมือ'],
+    ['poseModel', ['full', 'heavy', 'lite'], 'heavy แม่นสุด (ช้าสุด) · full · lite เร็วสุด (รีโหลดหน้า)'],
+    ['handsEvery', 1, 4, 1, 'ตรวจมือทุกกี่เฟรม (สูง = เร็วขึ้น)'],
+    ['delegate', ['GPU', 'CPU'], 'รีโหลดหน้าหลังเปลี่ยน'],
+  ]],
+  ['HEAD', [
+    ['headGain', 0, 2, .05, 'ขยายมุมหัว'], ['neckShare', 0, 1, .05, 'สัดส่วนที่คอรับ'],
+    ['headYawSign', [1, -1], 'กลับทิศหันซ้ายขวา'], ['headPitchSign', [1, -1], 'กลับทิศก้มเงย'], ['headRollSign', [1, -1], 'กลับทิศเอียง'],
+    ['headPitchOffset', -.6, .6, .01, 'ชดเชยก้ม/เงย'], ['headLimit', .3, 1.6, .05, 'มุมสูงสุด (rad)'],
+  ]],
+  ['BODY', [
+    ['torsoRollGain', 0, 2, .05, 'เอียงตัวจากไหล่'], ['torsoYawGain', 0, 2, .05, 'บิดตัวจากไหล่'],
+    ['torsoLimit', .1, 1.2, .05, 'มุมตัวสูงสุด'], ['swayFromHead', 0, 1, .05, 'ตัวโยกตามหัว'],
+  ]],
+  ['UPPER BODY', [
+    ['trackHips', 'bool', 'สะโพกบิด/เอียง (ต้องเห็นสะโพก)'],
+    ['hipRollGain', 0, 2, .05, 'สะโพกเอียง'], ['hipYawGain', 0, 2, .05, 'สะโพกบิด'],
+    ['leanSource', ['auto', 'hips', 'face', 'off'], 'โน้มตัว: auto = ใช้แนวไหล่-สะโพกถ้าเห็น ไม่งั้นใช้ระยะหน้า'],
+    ['leanPitchGain', 0, 3, .05, 'โน้มหน้า-หลัง'], ['leanSideGain', 0, 3, .05, 'เอียงข้าง'], ['leanLimit', .1, 1, .05, 'มุมโน้มสูงสุด (rad)'],
+    ['shrugGain', 0, 4, .05, 'ยักไหล่'], ['shrugMax', 0, .7, .01, 'ยักไหล่สูงสุด (rad)'],
+  ]],
+  ['ARMS', [
+    ['armVisMin', 0, 1, .05, 'ความมั่นใจขั้นต่ำที่จะเริ่มแทร็กแขน'], ['armVisHyst', 0, .5, .01, 'แทร็กแล้วจะหลุดเมื่อต่ำกว่า min − ค่านี้'],
+    ['armHold', 0, 2, .05, 'แขนหลุดแล้วค้างท่าเดิมกี่วินาทีก่อนลง'], ['armHandBoost', 0, .6, .01, 'เห็นมือ = เพิ่มความมั่นใจแขน'],
+    ['armGate', .3, 2, .05, 'แขนขยับเร็วแค่ไหนถึงนับว่าวาร์ป'], ['armZScale', 0, 1.5, .05, 'ความลึกแขน (MediaPipe z สั่น)'],
+    ['armDownAngle', .6, 1.5, .05, 'แขนตกตอนไม่เห็น'], ['handRotFromHand', 'bool', 'หมุนข้อมือจาก hand tracker'],
+    ['shoulderShare', 0, .6, .01, 'ไหล่หมุนตามแขน (กันไหล่โหนก)'],
+    ['elbowPlane', 'bool', 'คุมระนาบงอศอก (กันต้นแขนม้วนตอนยกสูง/อ้อมหลัง)'],
+    ['shoulderRaiseExtra', 0, .4, .01, 'ยกแขนสูง → ไหล่/สะบักช่วยยกเพิ่ม (ลดรอยยืดที่ไหล่)'],
+    ['upperTwistShare', 0, 1, .05, 'กระจายการบิดต้นแขนไปที่ไหล่ (ลดแขนเสื้อบิดเกลียว)'],
+    ['armCollide', 'bool', 'แขนไม่ทะลุตัว (แนบผิวจริง)'],
+    ['armMarginElbow', 0, .12, .005, 'ระยะศอก/แขนเสื้อจากตัว (m)'], ['armMarginWrist', 0, .1, .005, 'ระยะข้อมือ/แขนล่าง'],
+    ['armMarginHand', 0, .06, .002, 'ระยะฝ่ามือจากผิว (ความหนามือ)'],
+  ]],
+  ['LOOK', [
+    ['outline', 'bool', 'เส้นขอบ (inverted hull)'], ['outlineWidth', 0, .008, .0002, 'ความหนาเส้นขอบ (m)'],
+    ['toonShadow', ['#ccbdcc', '#b8a8bc', '#d9cfd6', '#a89aa8'], 'สีเงา (คูณกับ texture)'],
+    ['toonSoftLo', 0, 1, .01, 'เงาเริ่ม'], ['toonSoftHi', 0, 1, .01, 'เงาจบ (ห่าง = นุ่ม)'],
+    ['skinning', ['dqs', 'linear'], 'dqs = Preserve Volume แบบ Blender (แขนเสื้อไม่ยุบตอนพับแขน) · linear = แบบเดิม'],
+    ['castShadows', 'bool', 'เงาตกกระทบ (ผมทอดเงาลงหน้า แบบ EEVEE)'], ['castShadowAmt', 0, 1, .01, 'ความเข้มเงาตกกระทบ'],
+  ]],
+  ['SCAN', [
+    ['scanView', 'bool', 'แผงสแกน 3D (face mesh + โครงร่างกาย + มือ) · คีย์ G'],
+    ['scanFaceMesh', 'bool', 'face mesh เต็ม (ปิด = จุด)'],
+  ]],
+  ['FINGERS', [
+    ['fingerGain', 0, 2, .05, 'งอนิ้ว'], ['thumbGain', 0, 2, .05, 'งอโป้ง'],
+    ['curlDeadzone', 0, .5, .01, 'ตัดสั่นตอนแบมือ'], ['fingerFlip', 'bool', 'กลับทิศงอ ถ้านิ้วงอผิดด้าน'],
+  ]],
+  ['LIPSYNC / TONGUE', [
+    ['mouthMode', ['vowel', 'raw'], 'vowel = ปากเป็นสระ A I U E O · raw = อ้า/จู๋/กว้างตรงๆ'],
+    ['vowelGain', 0, 3, .05, 'ขยายสระ'],
+    ['micLipsync', 'bool', 'ลิปซิงก์จากไมค์ (เปิดไมค์)'], ['micGain', 0, 4, .05, 'ความไวไมค์'],
+    ['tongueDetect', 'bool', 'ตรวจลิ้นจากสีในภาพ (ดูค่า TONGUE ใน HUD)'],
+    ['tongueLow', -.1, .3, .005, 'ค่า TONGUE raw ตอนไม่แลบลิ้น → 0'], ['tongueHigh', -.1, .4, .005, 'ค่า raw ตอนแลบลิ้นสุด → 1'],
+    ['tongueGain', 0, 3, .05, 'ขยายลิ้น'],
+  ]],
+  ['FACE', [
+    ['showFaceBars', 'bool', 'แถบค่าหน้าทุกตัว (ไว้จูน)'],
+    ['happyGain', 0, 3, .05, 'ตายิ้ม ^ ^ (จาก cheekSquint)'], ['cheekGain', 0, 3, .05, 'แก้มพอง'],
+    ['uGain', 0, 3, .05, 'ปากเสียง U (จู๋)'], ['pressGain', 0, 3, .05, 'เม้มปาก'],
+    ['faceCurve', .3, 1.2, .01, 'เส้นโค้งหน้า: ต่ำ = ขยับนิดเดียวก็เห็นชัด'], ['faceBoost', .5, 2, .01, 'ขยายทุกท่าหน้า'],
+    ['faceMax', 1, 1.8, .01, 'ยอมให้เกินเต็มได้ (ท่าหน้าแรงขึ้น)'],
+    ['faceSpring', 'bool', 'สปริงหน้า: เด้งเข้าท่าแล้วนิ่ง (ไดนามิก)'],
+    ['faceSpringHz', 1, 15, .5, 'ความไวสปริง (Hz)'], ['faceSpringDamp', .2, 1.2, .01, 'หน่วงสปริง (<1 = เด้งเกินนิดๆ)'],
+    ['blinkLow', 0, 1, .01, 'ต่ำกว่านี้ = ลืมตาเต็ม'], ['blinkHigh', 0, 1, .01, 'สูงกว่านี้ = หลับเต็ม'],
+    ['linkBlink', 'bool', 'กะพริบสองข้างพร้อมกัน'], ['autoBlink', 'bool', 'กะพริบเองตอนไม่เห็นหน้า'],
+    ['jawGain', 0, 3, .05, 'อ้าปาก'], ['mouthShapes', 'bool', 'ปากจู๋/กว้าง/O'], ['smileGain', 0, 3, .05, 'ยิ้ม'],
+    ['browGain', 0, 3, .05, 'คิ้ว'], ['eyeWideGain', 0, 3, .05, 'ตาโต'], ['squintGain', 0, 2, .05, 'หรี่ตา'],
+    ['gazeGain', 0, 3, .05, 'กลอกตา'], ['flipGazeX', 'bool', 'กลับทิศกลอกตาซ้ายขวา'],
+    ['swapFaceLR', 'bool', 'สลับซ้ายขวาของหน้า (ตา/ยิ้ม/คิ้ว)'],
+  ]],
+  ['HAIR', [
+    ['hairSpring', 'bool', 'ฟิสิกส์ผม'], ['hairStiff', 0, .5, .01, 'แรงดึงกลับทรงเดิม (สูง = แข็ง)'],
+    ['hairDrag', 0, .6, .01, 'แรงหน่วง (สูง = หยุดไว)'], ['hairGravity', 0, 15, .1, 'แรงโน้มถ่วง (m/s²)'],
+    ['hairInertia', 0, 2, .05, 'ผมเหวี่ยงตามแรงขยับ'], ['hairHeadRadius', .03, .15, .005, 'ทรงกลมกันผมทะลุหัว (m)'],
+  ]],
+  ['RIBBONS', [
+    ['ribbonStiff', 0, .3, .002, 'ริบบิ้นข้อมือ: แรงดึงกลับทรงเดิม'], ['ribbonDrag', 0, .6, .01, 'ริบบิ้น: แรงหน่วง'],
+    ['ribbonGravity', 0, 15, .1, 'ริบบิ้น: แรงโน้มถ่วง (m/s²)'], ['ribbonInertia', 0, 2, .05, 'ริบบิ้น: เหวี่ยงตามแขน'],
+  ]],
+  ['HAND × HAIR', [
+    ['hairHandCollide', 'bool', 'มือสางผม/ปัดผมได้'], ['hairHandRadius', .01, .12, .005, 'ขนาดมือที่ชนผม (m)'],
+    ['hairHandDrag', 0, 2, .05, 'ผมติดมือไปแค่ไหนตอนสาง'],
+  ]],
+  ['HANDS DETAIL', [
+    ['fingerMode', ['aim', 'curl'], 'aim = ทุกข้อนิ้วเล็งตามจุดจริง (งอ+กาง+โป้ง) · curl = งออย่างเดียว'],
+    ['twistShare', 0, 1, .05, 'แขนท่อนล่างบิดตามข้อมือ'],
+    ['handFlipX', 'bool', 'ถ้าฝ่ามือยังกลับด้าน ลองติ๊ก'], ['handFlipZ', 'bool', 'ถ้ามือหันเข้า/ออกผิด ลองติ๊ก'],
+  ]],
+  ['PREDICTION', [
+    ['predict', 'bool', 'คาดเดาการเคลื่อนไหว (ลื่นระหว่างเฟรม + ตัดการวาร์ป)'],
+    ['predAlpha', .1, 1, .01, 'เชื่อค่าใหม่แค่ไหน (สูง = ตามไว)'], ['predBeta', 0, .8, .01, 'เรียนรู้ความเร็ว'],
+    ['predLead', 0, .2, .005, 'คาดล่วงหน้าสูงสุด (s) ชดเชยดีเลย์'], ['predDamp', 0, 15, .1, 'ความเร็วหน่วงลง (กันพุ่งเกิน)'],
+    ['predGateFrames', 1, 8, 1, 'ค่ากระโดดต้องซ้ำกี่เฟรมถึงจะเชื่อ'],
+    ['maxHeadSpeed', 1, 20, .5, 'หัวหมุนเร็วสุด (rad/s)'], ['maxArmSpeed', 1, 30, .5, 'แขนเร็วสุด (rad/s)'],
+    ['maxTorsoSpeed', 1, 15, .5, 'ตัวเร็วสุด (rad/s)'], ['elbowMax', 1.5, 3.1, .05, 'ข้อศอกงอสุด (rad)'],
+  ]],
+  ['SMOOTHING', [
+    ['filter', ['oneEuro', 'exp'], 'oneEuro = นิ่งตอนอยู่กับที่ ไวตอนขยับเร็ว'],
+    ['euroMinCutoff', .1, 6, .05, 'ต่ำ = นิ่งขึ้น (สั่นน้อย)'], ['euroBeta', 0, 3, .05, 'สูง = ตามไวขึ้นตอนขยับเร็ว'],
+    ['rotSpeed', 2, 40, 1, 'หัว/ตัว: สูง = ไว, ต่ำ = นิ่ง'], ['armSpeed', 2, 40, 1, 'แขน'],
+    ['faceSpeed', 2, 60, 1, 'หน้า'], ['blinkSpeed', 5, 80, 1, 'กะพริบ'], ['fingerSpeed', 2, 40, 1, 'นิ้ว'],
+  ]],
+];
+// Thanyo's tuned settings (avatar-track-config (1).json, 2026-11-14) become the defaults.
+// Exception: tongueLow .145 / tongueHigh −.1 were inverted (low > high), which kept the tongue at 0 forever →
+// replaced by a working range around the measured resting raw value (~.03).
+Object.assign(DEF, {
+  hairStiff: .04, hairDrag: .06, hairGravity: 0, poseModel: 'heavy', neckShare: 0,
+  torsoRollGain: 1.05, torsoLimit: .75, swayFromHead: 0,
+  blinkLow: .16, blinkHigh: .43, smileGain: 3, happyGain: 3, cheekGain: 3, uGain: 2.55, pressGain: 3,
+  mouthMode: 'raw', vowelGain: 2.75, micGain: 3.9, tongueLow: .07, tongueHigh: .16, tongueGain: 1.5,
+  browGain: 2.2, eyeWideGain: 1.95, gazeGain: 3, blinkSpeed: 53,
+  euroMinCutoff: 6, euroBeta: 3, twistShare: 0,
+});
+const LS = 'avatarTrackCfg';
+const CFG = { ...DEF };
+// saved settings from older versions: drop the keys whose defaults changed on purpose
+const CFG_VER = 8, RESET_ON_UPGRADE = ['outline', 'outlineWidth', 'rotSpeed', 'armSpeed', 'faceSpeed', 'fingerSpeed', 'shading',
+  'trackLegs', 'rootMoveGain', 'grounding', 'scanView', 'possessBg', 'armVisMin', 'maxArmSpeed', 'elbowMax', 'cheekGain'];
+try {
+  const saved = JSON.parse(localStorage.getItem(LS) || '{}');
+  if ((saved._ver || 0) < CFG_VER) for (const k of RESET_ON_UPGRADE) delete saved[k];
+  Object.assign(CFG, saved);
+} catch {}
+CFG._ver = CFG_VER;
+const saveCfg = () => { try { localStorage.setItem(LS, JSON.stringify(CFG)); } catch {} };
+const ctrls = {};
+// Inspector categories (tabs) → groups, with Thai titles
+const CATS = [
+  ['look', 'ภาพ', [['MODEL', 'โมเดล'], ['CAMERA', 'กล้อง & ฉากหลัง'], ['LOOK', 'เชดเดอร์ & เงา'], ['SCAN', 'แผงสแกน']]],
+  ['track', 'แทร็ก', [['TRACKING', 'เปิด/ปิดการแทร็ก'], ['PREDICTION', 'คาดเดาการเคลื่อนไหว'], ['SMOOTHING', 'ความนิ่ง / ความไว']]],
+  ['face', 'หน้า', [['FACE', 'สีหน้า ตา คิ้ว'], ['LIPSYNC / TONGUE', 'ปาก ลิปซิงก์ ลิ้น']]],
+  ['body', 'ตัว', [['HEAD', 'หัว'], ['BODY', 'ลำตัว'], ['UPPER BODY', 'สะโพก โน้มตัว ยักไหล่'], ['ARMS', 'แขน'], ['HANDS DETAIL', 'ข้อมือ'], ['FINGERS', 'นิ้ว']]],
+  ['phys', 'ฟิสิกส์', [['HAIR', 'ผม'], ['RIBBONS', 'ริบบิ้นข้อมือ'], ['HAND × HAIR', 'มือสางผม']]],
+];
+let inspTab = (() => { try { return localStorage.getItem(LS + ':tab') || 'look'; } catch { return 'look'; } })();
+const groupEls = {};
+function showInspTab(id) {
+  inspTab = id; try { localStorage.setItem(LS + ':tab', id); } catch {}
+  document.getElementById('iSearch').value = '';
+  for (const b of document.querySelectorAll('#itabs button')) b.classList.toggle('on', b.dataset.cat === id);
+  for (const [g, el] of Object.entries(groupEls)) { el.hidden = el.dataset.cat !== id; for (const r of el.querySelectorAll('.row')) r.hidden = false; }
+}
+function filterInsp(q) {
+  q = q.trim().toLowerCase();
+  if (!q) return showInspTab(inspTab);
+  for (const b of document.querySelectorAll('#itabs button')) b.classList.remove('on');
+  for (const el of Object.values(groupEls)) {
+    let any = false;
+    for (const r of el.querySelectorAll('.row')) { const hit = r.textContent.toLowerCase().includes(q); r.hidden = !hit; any ||= hit; }
+    el.hidden = !any; if (any) el.open = true;
+  }
+}
+function buildPanel() {
+  const root = document.getElementById('groups'); root.innerHTML = '';
+  const tabs = document.getElementById('itabs'); tabs.innerHTML = '';
+  const meta = {};
+  for (const [cid, cname, gs] of CATS) {
+    const b = document.createElement('button'); b.textContent = cname; b.dataset.cat = cid; b.onclick = () => showInspTab(cid); tabs.appendChild(b);
+    gs.forEach(([g, th], i) => meta[g] = { cid, th, first: i === 0 });
+  }
+  SCHEMA.forEach(([g, rows]) => {
+    const m = meta[g] || { cid: 'look', th: g, first: false };
+    const d = document.createElement('details'); d.open = m.first; d.dataset.cat = m.cid; groupEls[g] = d;
+    d.innerHTML = `<summary>${m.th} <small>${g}</small></summary>`;
+    for (const r of rows) {
+      const [k] = r, row = document.createElement('div'); row.className = 'row';
+      let input;
+      if (r[1] === 'bool') {
+        row.innerHTML = `<div class="top"><label class="k"><input type="checkbox"> ${k}</label></div><div class="hint">${r[2]}</div>`;
+        input = row.querySelector('input'); input.onchange = () => setCfg(k, input.checked);
+      } else if (Array.isArray(r[1])) {
+        row.innerHTML = `<div class="top"><span class="k">${k}</span></div><select>${r[1].map(o => `<option>${o}</option>`).join('')}</select><div class="hint">${r[2]}</div>`;
+        input = row.querySelector('select');
+        input.onchange = () => setCfg(k, typeof DEF[k] === 'number' ? +input.value : input.value);
+      } else {
+        row.innerHTML = `<div class="top"><span class="k">${k}</span><span class="val"></span></div><input type="range" min="${r[1]}" max="${r[2]}" step="${r[3]}"><div class="hint">${r[4]}</div>`;
+        input = row.querySelector('input'); input.oninput = () => setCfg(k, +input.value);
+      }
+      ctrls[k] = { input, row }; d.appendChild(row);
+    }
+    root.appendChild(d);
+  });
+  showInspTab(CATS.some(c => c[0] === inspTab) ? inspTab : 'look');
+  syncPanel();
+}
+document.getElementById('iSearch').oninput = e => filterInsp(e.target.value);
+function syncPanel() {
+  for (const k in ctrls) {
+    const { input, row } = ctrls[k];
+    if (input.type === 'checkbox') input.checked = !!CFG[k];
+    else input.value = CFG[k];
+    const v = row.querySelector('.val'); if (v) v.textContent = (+CFG[k]).toFixed(input.step < .01 ? 3 : 2);
+  }
+}
+function setCfg(k, v) { CFG[k] = v; saveCfg(); syncPanel(); onCfg(k); }
+document.getElementById('iReset').onclick = () => { Object.assign(CFG, DEF); saveCfg(); syncPanel(); for (const k in DEF) onCfg(k); toast('RESET'); };
+document.getElementById('iExport').onclick = () => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(CFG, null, 2)], { type: 'application/json' }));
+  a.download = 'avatar-track-config.json'; a.click();
+};
+document.getElementById('iImport').onclick = () => document.getElementById('iFile').click();
+document.getElementById('iFile').onchange = async e => {
+  try { Object.assign(CFG, JSON.parse(await e.target.files[0].text())); saveCfg(); syncPanel(); for (const k in DEF) onCfg(k); toast('IMPORTED'); } catch { toast('BAD JSON'); }
+};
+const insp = document.getElementById('insp'), keysEl = document.getElementById('keys');
+const toggleInsp = () => { insp.hidden = !insp.hidden; };
+const toggleKeys = (on = keysEl.hidden) => { keysEl.hidden = !on; };
+document.getElementById('inspBtn').onclick = toggleInsp;
+document.getElementById('keysBtn').onclick = () => toggleKeys();
+document.getElementById('keysClose').onclick = () => toggleKeys(false);
+keysEl.onclick = e => { if (e.target === keysEl) toggleKeys(false); };
+// opened from the personal site (?from=site) → show the way back; inside the site's inline player (?embed=1) it isn't needed
+const QS0 = new URLSearchParams(location.search);
+if (QS0.get('from') === 'site' && !QS0.has('embed')) document.getElementById('backBtn').hidden = false;
+const toggleFS = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => toast('เต็มจอไม่ได้'));
+document.getElementById('fsBtn').onclick = toggleFS;
+document.getElementById('iCal').onclick = () => calibrate();
+buildPanel();
+
+let toastT;
+function toast(s) { const t = document.getElementById('toast'); t.textContent = s; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1400); }
+
+// ═════════════════════════ three.js scene ═════════════════════════
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(28, 1, .05, 50);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+const hemi = new THREE.HemisphereLight(0xffffff, 0x30303a, 1.6); scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(.6, 2.2, 2.5); scene.add(key); scene.add(key.target);
+key.shadow.mapSize.set(2048, 2048); key.shadow.camera.near = .1; key.shadow.camera.far = 8;
+key.shadow.bias = -.0004; key.shadow.normalBias = .012; key.shadow.radius = 4;
+const rim = new THREE.DirectionalLight(0x8fa8ff, 1.8); rim.position.set(-1.5, 1.8, -2); scene.add(rim);
+// floor ring
+const ring = new THREE.Mesh(new THREE.RingGeometry(.42, .425, 96), new THREE.MeshBasicMaterial({ color: 0x444444, side: THREE.DoubleSide }));
+ring.rotation.x = -Math.PI / 2; ring.position.y = .002; scene.add(ring);
+
+// possession view = the 3D camera IS the webcam: same aspect, vertical FOV (MediaPipe's face geometry assumes 63°),
+// camera at the origin looking −Z, video drawn behind in exactly the same box.
+// (try: resize() also runs at startup, before `mode`/`video` are declared further down)
+const possessActive = () => { try { return mode === 'cam' && CFG.viewMode === 'possess' && video.videoWidth > 0; } catch { return false; } };
+function resize() {
+  const w = innerWidth, h = innerHeight, cv = renderer.domElement, vs = document.getElementById('v').style;
+  if (possessActive()) {
+    const va = video.videoWidth / video.videoHeight;
+    const bw = w / h > va ? h * va : w, bh = w / h > va ? h : w / va;
+    const box = { left: (w - bw) / 2 + 'px', top: (h - bh) / 2 + 'px', width: bw + 'px', height: bh + 'px' };
+    const seg = CFG.possessBg === 'clean' || CFG.possessBg === 'blur';
+    Object.assign(cv.style, box); Object.assign(vs, box, { opacity: CFG.possessBg === 'video' ? 1 : CFG.possessBg === 'dim' ? .35 : 0,
+      transform: CFG.mirror ? 'scaleX(-1)' : 'none', objectFit: 'fill', zIndex: 0 });
+    const bgc = document.getElementById('bg');
+    bgc.hidden = !seg; Object.assign(bgc.style, box, { transform: CFG.mirror ? 'scaleX(-1)' : 'none' });
+    document.body.style.background = CFG.possessBg === 'solid' ? CFG.bgColor : '';
+    renderer.setSize(bw, bh, false);
+    camera.aspect = va; camera.fov = CFG.camFov; camera.near = .02;
+    camera.position.set(0, 0, 0); camera.quaternion.identity();
+    controls.enabled = false;
+  } else {
+    Object.assign(cv.style, { left: '0px', top: '0px', width: '100vw', height: '100vh' });
+    document.getElementById('bg').hidden = true;
+    document.body.style.background = '';
+    Object.assign(vs, { left: '', top: '', width: '1px', height: '1px', opacity: 0, transform: 'none' });
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = 28; camera.near = .05;
+    controls.enabled = true;
+  }
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+const toonGrad = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([70, 150, 255]), 3, 1, THREE.RedFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
+})();
+
+// ═════════════════════════ avatar ═════════════════════════
+const AV = { root: null, bones: {}, rest: new Map(), morphs: {}, meshes: [], ready: false };
+let headPos = new THREE.Vector3(0, 1.6, 0);
+
+// the site copy (tools/sync_site.ps1) ships each GLB as base64 in glb-<name>.js, loaded by a plain <script> tag
+// (fetch() of a .glb is blocked on file://, a script tag is not), so the page also runs straight from the folder
+async function embeddedGLB(src) {
+  if (!window.AVATAR_SITE) return null;
+  const name = src.split('/').pop();
+  if (!window.AVATAR_GLB?.[name]) await new Promise((ok, fail) => {
+    const s = document.createElement('script'); s.src = 'glb-' + name.replace(/\.glb$/, '') + '.js';
+    s.onload = ok; s.onerror = () => fail(new Error('missing ' + s.src)); document.head.appendChild(s);
+  });
+  const b64 = window.AVATAR_GLB[name];
+  const bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8.buffer;
+}
+async function loadAvatar(src) {
+  const emb = await embeddedGLB(src), loader = new GLTFLoader();
+  const gltf = emb ? await loader.parseAsync(emb, '') : await loader.loadAsync(src);
+  if (AV.root) scene.remove(AV.root);
+  const root = new THREE.Group(); root.add(gltf.scene); scene.add(root);
+  AV.root = root; AV.bones = {}; AV.rest = new Map(); AV.morphs = {}; AV.meshes = [];
+  root.traverse(o => {
+    if (o.isBone) { AV.bones[o.name] = o; AV.rest.set(o, { q: o.quaternion.clone(), p: o.position.clone() }); }
+    if (o.isMesh) {
+      o.frustumCulled = false;
+      // shadows: hair / headpiece / clothes cast; the face and clothes receive (hair doesn't receive → no self-acne)
+      o.castShadow = /Hair|Blouse|Legwear|Body|Weapon/.test(o.name);
+      o.receiveShadow = !/Hair|Iris|Lash|Tongue|Teeth|Blush|Eyes/.test(o.name);
+      const std = o.material;
+      if (o.name.startsWith('Blush')) { std.transparent = true; std.depthWrite = false; }
+      const toon = new THREE.MeshToonMaterial({ map: std.map, color: std.color, gradientMap: toonGrad,
+        transparent: std.transparent, alphaTest: std.alphaTest, side: std.side, depthWrite: std.depthWrite });
+      const flat = new THREE.MeshBasicMaterial({ map: std.map, color: std.color,
+        transparent: std.transparent, alphaTest: std.alphaTest, side: std.side, depthWrite: std.depthWrite });
+      o.userData.mats = { standard: std, toon, flat, blender: makeBlenderMat(std) };
+      AV.meshes.push(o);
+      if (o.morphTargetDictionary) for (const [n, i] of Object.entries(o.morphTargetDictionary)) (AV.morphs[n] ||= []).push([o, i]);
+    }
+  });
+  addOutlines();
+  setupDQS();
+  // normalise: ~1.7 m tall, feet on the floor, centred (models come in at any scale)
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(gltf.scene), size = box.getSize(new THREE.Vector3());
+  const k = 1.7 / Math.max(size.y, 1e-3);
+  root.scale.setScalar(k);
+  root.position.set(-(box.min.x + box.max.x) / 2 * k, -box.min.y * k, -(box.min.z + box.max.z) / 2 * k);
+  root.updateMatrixWorld(true);
+  AV.base = root.position.clone(); AV.baseScale = root.scale.x;
+  S.poss = new THREE.Vector3(); S.possInit = false;
+  setupRig();
+  setupHair();
+  setupBodyColliders();
+  AV.restLow = Math.min(...['LeftFoot', 'RightFoot', 'LeftToes', 'RightToes'].map(n => AV.bones[n] ? worldPos(AV.bones[n]).y : Infinity));
+  if (!isFinite(AV.restLow)) AV.restLow = 0;
+  S.ground = 0;
+  applyLook();
+  AV.ready = true;
+  frameCamera(true);
+}
+
+// ── 'blender' look = Model/clay_outline.py: texture × soft toon ramp, like Diffuse → Shader to RGB → ease ramp →
+// emission. It is built on MeshLambertMaterial so it receives SHADOWS (hair shading the face, like EEVEE's sun):
+// the Lambert light term is replaced by mix(shadowTint, 1, ramp(N·L) × shadow), no ambient, no 1/π.
+const LOOK = { uShadow: { value: new THREE.Color(CFG.toonShadow) }, uLo: { value: CFG.toonSoftLo }, uHi: { value: CFG.toonSoftHi },
+  uLightI: { value: 1 }, uCast: { value: CFG.castShadowAmt } };
+function makeBlenderMat(std) {
+  const m = new THREE.MeshLambertMaterial({ map: std.map, color: std.color, transparent: std.transparent, alphaTest: std.alphaTest,
+    side: std.side, depthWrite: std.depthWrite });
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, LOOK);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <lights_lambert_pars_fragment>', `
+      uniform vec3 uShadow; uniform float uLo; uniform float uHi; uniform float uLightI; uniform float uCast;
+      varying vec3 vViewPosition;
+      struct LambertMaterial { vec3 diffuseColor; float specularStrength; };
+      void RE_Direct_Lambert( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal,
+          const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) {
+        float t = smoothstep( uLo, uHi, dot( geometryNormal, directLight.direction ) * 0.5 + 0.5 );
+        float sh = clamp( dot( directLight.color, vec3( 0.3333 ) ) / max( uLightI, 1e-4 ), 0.0, 1.0 );   // 1 lit, 0 in shadow
+        reflectedLight.directDiffuse += mix( uShadow, vec3( 1.0 ), t * mix( 1.0, sh, uCast ) ) * material.diffuseColor;
+      }
+      void RE_IndirectDiffuse_Lambert( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal,
+          const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in LambertMaterial material, inout ReflectedLight reflectedLight ) { }
+      #define RE_Direct RE_Direct_Lambert
+      #define RE_IndirectDiffuse RE_IndirectDiffuse_Lambert
+    `);
+  };
+  return m;
+}
+// lights for the blender look: one key sun (casts shadows) from front-top-left, nothing else
+const KEY_DIR = new THREE.Vector3(-.45, .8, .55).normalize();
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+function updateKeyLight() {
+  const blender = CFG.shading === 'blender';
+  hemi.visible = rim.visible = !blender;
+  key.castShadow = blender && CFG.castShadows;
+  LOOK.uLightI.value = key.intensity; LOOK.uCast.value = CFG.castShadows ? CFG.castShadowAmt : 0;
+  if (!AV.ready || !blender) return;
+  const c = worldPos(B('Head') || AV.root, new THREE.Vector3()).add(new THREE.Vector3(0, -.15, 0));
+  key.target.position.copy(c); key.target.updateMatrixWorld();
+  key.position.copy(c).addScaledVector(KEY_DIR, 3);
+  const s = AV.root.scale.x / (AV.baseScale || 1) * .75, cam = key.shadow.camera;
+  if (cam.right !== s) { cam.left = -s; cam.right = s; cam.top = s; cam.bottom = -s; cam.updateProjectionMatrix(); }
+}
+// ── Dual Quaternion Skinning = Blender's "Preserve Volume" (the Sheep's armature modifiers have it ON) ──
+// three.js skins linearly (LBS): a joint bent far (arm folded behind the head) averages matrices and the sleeve
+// collapses / wrings. DQS blends rigid transforms as dual quaternions instead, keeping volume like Blender does.
+// Per skeleton, every frame: bone matrix → (rotation q, dual part ½·t·q) into a float texture; the vertex shader
+// blends them (sign-aligned to the first influence) and transforms position + normal.
+const DQS_GLSL = `
+  uniform sampler2D dqTex; uniform float dqCount; uniform float dqScale;
+  vec4 dqFetch(float i) { return texture2D(dqTex, vec2((i + .5) / (2. * dqCount), .5)); }
+  void dqBlend(out vec4 br, out vec4 bd) {
+    vec4 r0 = dqFetch(2. * skinIndex.x), d0 = dqFetch(2. * skinIndex.x + 1.);
+    vec4 r1 = dqFetch(2. * skinIndex.y), d1 = dqFetch(2. * skinIndex.y + 1.);
+    vec4 r2 = dqFetch(2. * skinIndex.z), d2 = dqFetch(2. * skinIndex.z + 1.);
+    vec4 r3 = dqFetch(2. * skinIndex.w), d3 = dqFetch(2. * skinIndex.w + 1.);
+    vec4 w = skinWeight;
+    if (dot(r0, r1) < 0.) w.y = -w.y; if (dot(r0, r2) < 0.) w.z = -w.z; if (dot(r0, r3) < 0.) w.w = -w.w;
+    br = r0 * w.x + r1 * w.y + r2 * w.z + r3 * w.w;
+    bd = d0 * w.x + d1 * w.y + d2 * w.z + d3 * w.w;
+    float l = length(br); br /= l; bd /= l;
+  }
+  vec3 dqPoint(vec4 r, vec4 d, vec3 p) {
+    return p + 2. * cross(r.xyz, cross(r.xyz, p) + r.w * p) + 2. * (r.w * d.xyz - d.w * r.xyz + cross(r.xyz, d.xyz));
+  }
+  vec3 dqDir(vec4 r, vec3 v) { return v + 2. * cross(r.xyz, cross(r.xyz, v) + r.w * v); }
+`;
+function applyDQS(mat, mesh) {
+  if (!mesh.isSkinnedMesh || mat.userData.dqs) return;
+  mat.userData.dqs = true;
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (sh, r) => {
+    if (prev) prev.call(mat, sh, r);
+    if (CFG.skinning !== 'dqs') return;
+    const dq = mesh.skeleton._dq;
+    if (!dq) return;
+    sh.uniforms.dqTex = dq.tex; sh.uniforms.dqCount = dq.count; sh.uniforms.dqScale = dq.scale;
+    sh.vertexShader = sh.vertexShader.replace('void main() {', DQS_GLSL + '\nvoid main() {')
+      .replace('#include <skinnormal_vertex>', `#ifdef USE_SKINNING
+          vec4 dqR, dqD; dqBlend(dqR, dqD);
+          objectNormal = (bindMatrixInverse * vec4(dqDir(dqR, (bindMatrix * vec4(objectNormal, 0.)).xyz), 0.)).xyz;
+        #endif`)
+      .replace('#include <skinning_vertex>', `#ifdef USE_SKINNING
+          vec4 dqR2, dqD2; dqBlend(dqR2, dqD2);
+          vec3 skP = (bindMatrix * vec4(transformed, 1.)).xyz;
+          transformed = (bindMatrixInverse * vec4(dqPoint(dqR2, dqD2, skP * dqScale), 1.)).xyz;
+        #endif`);
+  };
+  mat.customProgramCacheKey = () => 'dqs:' + CFG.skinning + ':' + (mat.type);
+  mat.needsUpdate = true;
+}
+function setupDQS() {
+  const seen = new Set();
+  for (const m of AV.meshes) {
+    if (!m.isSkinnedMesh) continue;
+    const sk = m.skeleton;
+    if (!seen.has(sk)) {
+      seen.add(sk);
+      const n = sk.bones.length, data = new Float32Array(n * 2 * 4);
+      const tex = new THREE.DataTexture(data, n * 2, 1, THREE.RGBAFormat, THREE.FloatType);
+      tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.needsUpdate = true;
+      sk._dq = { tex: { value: tex }, count: { value: n }, scale: { value: 1 }, data };   // Skeleton has no userData
+    }
+    m.userData.mats = m.userData.mats || {};
+    for (const mat of Object.values(m.userData.mats)) applyDQS(mat, m);
+    if (m.userData.outline) applyDQS(m.userData.outline.material, m.userData.outline);
+    // the shadow pass must deform the same way, or the surface lands inside its own (linear-skinned) shadow
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, alphaTest: m.material.alphaTest || 0 });
+    applyDQS(dm, m); m.customDepthMaterial = dm; m.userData.mats._depth = dm;
+  }
+  AV.skeletons = [...seen];
+}
+const _dm = new THREE.Matrix4(), _dq = new THREE.Quaternion(), _dp = new THREE.Vector3(), _ds = new THREE.Vector3();
+function updateDQS() {
+  if (CFG.skinning !== 'dqs' || !AV.skeletons) return;
+  for (const sk of AV.skeletons) {
+    sk.update();                                     // bone matrices for THIS frame's pose
+    const bm = sk.boneMatrices, d = sk._dq.data;
+    let sSum = 0;                                    // the avatar root's uniform fit-scale lives in every bone matrix
+    for (let i = 0; i < sk.bones.length; i++) {
+      _dm.fromArray(bm, i * 16).decompose(_dp, _dq, _ds);
+      sSum += (_ds.x + _ds.y + _ds.z) / 3;
+      const { x: qx, y: qy, z: qz, w: qw } = _dq, tx = _dp.x, ty = _dp.y, tz = _dp.z, o = i * 8;
+      d[o] = qx; d[o + 1] = qy; d[o + 2] = qz; d[o + 3] = qw;
+      d[o + 4] = .5 * (tx * qw + ty * qz - tz * qy);
+      d[o + 5] = .5 * (-tx * qz + ty * qw + tz * qx);
+      d[o + 6] = .5 * (tx * qy - ty * qx + tz * qw);
+      d[o + 7] = -.5 * (tx * qx + ty * qy + tz * qz);
+    }
+    sk._dq.scale.value = sSum / sk.bones.length;
+    sk._dq.tex.value.needsUpdate = true;
+  }
+}
+
+// ── inverted-hull outline: a back-face copy of each skinned mesh pushed out along its (skinned) normal ──
+const NO_OUTLINE = /Iris|Tongue|Blush|Lash|Teeth|Eyes|Weapon/;
+function addOutlines() {
+  const col = new THREE.Color(.03, .025, .03);
+  for (const o of [...AV.meshes]) {
+    if (NO_OUTLINE.test(o.name) || !o.isSkinnedMesh) continue;
+    const u = { uOutline: { value: 0 } };
+    const mat = new THREE.MeshBasicMaterial({ color: col, side: THREE.BackSide });
+    mat.onBeforeCompile = sh => {
+      sh.uniforms.uOutline = u.uOutline;
+      sh.vertexShader = sh.vertexShader.replace('void main() {', 'uniform float uOutline;\nvoid main() {')
+        .replace('#include <project_vertex>', `#ifdef USE_SKINNING
+            transformed += normalize(objectNormal) * uOutline;
+          #else
+            transformed += normalize(normal) * uOutline;
+          #endif
+          #include <project_vertex>`);
+    };
+    const ol = new THREE.SkinnedMesh(o.geometry, mat);
+    ol.name = o.name + '_outline'; ol.frustumCulled = false;
+    ol.position.copy(o.position); ol.quaternion.copy(o.quaternion); ol.scale.copy(o.scale);
+    ol.bind(o.skeleton, o.bindMatrix);
+    if (o.morphTargetInfluences) { ol.morphTargetInfluences = o.morphTargetInfluences; ol.morphTargetDictionary = o.morphTargetDictionary; }
+    o.parent.add(ol);
+    o.userData.outline = ol; o.userData.outlineU = u;
+  }
+}
+
+const B = n => AV.bones[n];
+const SIDES = ['Left', 'Right'];
+const FINGERS = ['Thumb', 'Index', 'Middle', 'Ring', 'Little'];
+const SEGS = ['Proximal', 'Intermediate', 'Distal'];
+const RIG = { restWorld: new Map(), restPos: new Map(), handBasis: {}, finger: {} };
+
+function worldPos(o, v = new THREE.Vector3()) { return o.getWorldPosition(v); }
+function setupRig() {
+  RIG.restWorld = new Map(); RIG.restPos = new Map(); RIG.finger = {}; RIG.tipDir = new Map(); RIG.bendAxis = {}; aimCache.clear();
+  for (const [bone] of AV.rest) { RIG.restWorld.set(bone, bone.getWorldQuaternion(new THREE.Quaternion())); RIG.restPos.set(bone, worldPos(bone)); }
+  headPos = worldPos(B('Head'));
+  for (const s of SIDES) {
+    const hand = B(s + 'Hand');
+    const hp = worldPos(hand), ip = worldPos(B(s + 'IndexProximal')), mp = worldPos(B(s + 'MiddleProximal')),
+      lp = worldPos(B(s + 'LittleProximal')), tp = worldPos(B(s + 'ThumbIntermediate'));
+    RIG.handBasis[s] = basis(mp.clone().sub(hp), lp.clone().sub(ip));
+    // palm normal: perpendicular to palm plane, on the side the thumb sits (palm side)
+    const n = new THREE.Vector3().crossVectors(ip.clone().sub(hp), lp.clone().sub(hp)).normalize();
+    const knuckles = ip.clone().add(lp).multiplyScalar(.5);
+    if (n.dot(tp.clone().sub(knuckles)) > 0) n.negate();   // (verified visually: this sign curls toward the palm on this rig)
+    for (const f of FINGERS) for (let i = 0; i < 3; i++) {
+      const bone = B(s + f + SEGS[i]); if (!bone) continue;
+      const nxt = i < 2 ? B(s + f + SEGS[i + 1]) : null;
+      const a = worldPos(bone), b = nxt ? worldPos(nxt) : a.clone().add(a.clone().sub(worldPos(bone.parent)));
+      const d = b.sub(a).normalize();
+      const axisW = new THREE.Vector3().crossVectors(d, n).normalize();
+      const inv = RIG.restWorld.get(bone).clone().invert();
+      RIG.finger[bone.name] = axisW.applyQuaternion(inv);
+    }
+    // elbow bend axis at rest (T/A-pose: the forearm folds forward, toward +Z) in the upper-arm bone's own frame
+    const ua = B(s + 'UpperArm'), la = B(s + 'LowerArm');
+    if (ua && la) {
+      const d = RIG.restPos.get(la).clone().sub(RIG.restPos.get(ua)).normalize();
+      RIG.bendAxis[s] = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 0, 1)).normalize().applyQuaternion(RIG.restWorld.get(ua).clone().invert());
+    }
+    for (const f of FINGERS) {                       // distal bones have no child: keep their rest direction
+      const di = B(s + f + 'Distal'), it = B(s + f + 'Intermediate');
+      if (di && it) RIG.tipDir.set(di, RIG.restPos.get(di).clone().sub(RIG.restPos.get(it)).applyQuaternion(RIG.restWorld.get(di).clone().invert()).normalize());
+    }
+  }
+}
+// orthonormal basis matrix from forward f and side s
+function basis(f, s) {
+  const x = f.clone().normalize(), z = new THREE.Vector3().crossVectors(x, s).normalize(), y = new THREE.Vector3().crossVectors(z, x);
+  return new THREE.Matrix4().makeBasis(x, y, z);
+}
+
+// ── body colliders fitted to the real mesh: elliptical capsules along the spine + a head sphere ──
+// Each rest-pose vertex is assigned to its nearest bone segment (torso, arms, legs); for the torso segments the
+// side / front extents of their own vertices (80th–88th percentile) become the ellipse radii — so the collider hugs the
+// actual blouse/skin, not a guessed size. Arms are then pushed out of these so they rest ON the body.
+const BODY = { segs: [], head: null };
+function setupBodyColliders() {
+  BODY.segs = []; BODY.head = null;
+  const torso = [['Hips', 'Spine'], ['Spine', 'Chest'], ['Chest', 'UpperChest'], ['UpperChest', 'Neck']].filter(([a, b]) => B(a) && B(b));
+  const others = [];
+  for (const s of SIDES) others.push([s + 'UpperArm', s + 'LowerArm'], [s + 'LowerArm', s + 'Hand'], [s + 'Hand', s + 'MiddleProximal'],
+    [s + 'UpperLeg', s + 'LowerLeg'], [s + 'Shoulder', s + 'UpperArm']);
+  others.push(['Neck', 'Head']);
+  const all = [...torso, ...others].filter(([a, b]) => B(a) && B(b)).map(([a, b]) => [RIG.restPos.get(B(a)), RIG.restPos.get(B(b))]);
+  const nT = torso.length, acc = torso.map(() => ({ s: [], f: [] }));
+  const headPts = [];
+  const X = new THREE.Vector3(1, 0, 0), Z = new THREE.Vector3(0, 0, 1), v = new THREE.Vector3(), q = new THREE.Vector3();
+  for (const m of AV.meshes) {
+    if (/Hair|Iris|Tongue|Lash|Teeth|Eyes|Weapon|Blush/.test(m.name)) continue;
+    const pos = m.geometry.attributes.position, step = Math.max(1, Math.floor(pos.count / 6000));
+    for (let i = 0; i < pos.count; i += step) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+      let best = 1e9, bi = -1;
+      all.forEach(([a, b], j) => {
+        const ab = b.clone().sub(a), t = clamp(v.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+        const d = q.copy(a).addScaledVector(ab, t).distanceToSquared(v); if (d < best) { best = d; bi = j; }
+      });
+      if (bi >= 0 && bi < nT) {
+        const [a, b] = all[bi], ab = b.clone().sub(a), t = clamp(v.clone().sub(a).dot(ab) / ab.lengthSq(), 0, 1);
+        const d = v.clone().sub(q.copy(a).addScaledVector(ab, t));
+        acc[bi].s.push(Math.abs(d.dot(X))); if (d.dot(Z) > 0) acc[bi].f.push(d.dot(Z));
+      }
+      if (/Head/.test(m.name)) headPts.push(v.clone());
+    }
+  }
+  const pct = (arr, p) => { if (!arr.length) return .08; const s = [...arr].sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(s.length * p))]; };
+  torso.forEach(([a, b], j) => {
+    const A = B(a), inv = RIG.restWorld.get(A).clone().invert();
+    BODY.segs.push({ a: A, b: B(b), rx: pct(acc[j].s, .8), rz: pct(acc[j].f, .88),
+      side: X.clone().applyQuaternion(inv), front: Z.clone().applyQuaternion(inv) });
+  });
+  if (headPts.length && B('Head')) {
+    const c = headPts.reduce((s, p) => s.add(p), new THREE.Vector3()).multiplyScalar(1 / headPts.length);
+    const r = pct(headPts.map(p => p.distanceTo(c)), .7);
+    BODY.head = { bone: B('Head'), local: c.clone().sub(RIG.restPos.get(B('Head'))).applyQuaternion(RIG.restWorld.get(B('Head')).clone().invert()), r };
+  }
+}
+// push point p (world) out of the body colliders, keeping `margin` metres of clearance; returns true if moved
+function pushOutOfBody(p, margin) {
+  const sc = AV.root.scale.x / AV.baseScale; let moved = false;
+  for (const g of BODY.segs) {
+    const a = worldPos(g.a), b = worldPos(g.b), qa = g.a.getWorldQuaternion(new THREE.Quaternion());
+    const side = g.side.clone().applyQuaternion(qa), front = g.front.clone().applyQuaternion(qa);
+    const ab = b.clone().sub(a), tr = p.clone().sub(a).dot(ab) / ab.lengthSq();
+    // open-ended elliptic cylinders: no rounded end caps (the wide hip segment's cap used to swallow the elbows);
+    // the segments are chained, so the torso is still closed
+    if (tr < -.05 || tr > 1.05) continue;
+    const t = clamp(tr, 0, 1), c = a.clone().addScaledVector(ab, t);
+    const d = p.clone().sub(c), ds = d.dot(side), df = d.dot(front);
+    const rx = g.rx * sc + margin, rz = (df > 0 ? g.rz : g.rx) * sc + margin;      // back side: use the side radius
+    const e = Math.hypot(ds / rx, df / rz);
+    if (e < 1) {
+      const k = e > 1e-4 ? 1 / e : 1;
+      const out = side.clone().multiplyScalar(e > 1e-4 ? ds * k : rx).addScaledVector(front, e > 1e-4 ? df * k : 0);
+      p.copy(c).add(out).addScaledVector(ab.normalize(), d.dot(ab)); moved = true;
+    }
+  }
+  if (BODY.head) {
+    const h = BODY.head, c = h.local.clone().applyQuaternion(h.bone.getWorldQuaternion(new THREE.Quaternion())).multiplyScalar(sc).add(worldPos(h.bone));
+    const d = p.clone().sub(c), r = h.r * sc + margin;
+    if (d.length() < r) { p.copy(c).addScaledVector(d.normalize(), r); moved = true; }
+  }
+  return moved;
+}
+// analytic two-bone IK: put `end` (wrist) at target, keep both bone lengths, bend toward the current elbow side
+function solveTwoBone(upper, lower, end, target) {
+  const S = worldPos(upper), E = worldPos(lower), W = worldPos(end);
+  const L1 = S.distanceTo(E), L2 = E.distanceTo(W);
+  const st = target.clone().sub(S), d = clamp(st.length(), Math.abs(L1 - L2) + 1e-4, L1 + L2 - 1e-4);
+  const dir = st.normalize();
+  const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+  const pole = E.clone().sub(S); pole.addScaledVector(dir, -pole.dot(dir));
+  if (pole.lengthSq() < 1e-8) pole.set(0, -1, 0).addScaledVector(dir, -dir.y);
+  pole.normalize();
+  const elbow = S.clone().addScaledVector(dir, a).addScaledVector(pole, h);
+  aimBone(upper, lower, elbow.clone().sub(S));
+  aimBone(lower, end, S.clone().addScaledVector(dir, d).sub(worldPos(lower)));
+}
+const insideBody = (p, margin) => pushOutOfBody(p.clone(), margin);
+// where a limb coming from `from` (outside) toward `to` first touches the body surface → contact point.
+// The hand stops ON the side it came from (front of the chest), never pops out through the back.
+function contactAlong(from, to, margin) {
+  if (!insideBody(to, margin)) return null;
+  if (insideBody(from, margin)) { const p = to.clone(); pushOutOfBody(p, margin); return p; }
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; if (insideBody(from.clone().lerp(to, m), margin)) hi = m; else lo = m; }
+  return from.clone().lerp(to, lo);
+}
+// re-aim an arm so it rests on the body: elbow out (upper arm), forearm stops where it meets the body (forearm),
+// palm stops on the surface (hand). Bone lengths are kept because only directions change.
+function resolveArmCollision(s) {
+  const ua = B(s + 'UpperArm'), la = B(s + 'LowerArm'), hd = B(s + 'Hand'), mp = B(s + 'MiddleProximal');
+  if (!ua || !la || !hd || !BODY.segs.length) return;
+  const sc = AV.root.scale.x / AV.baseScale;
+  const el = worldPos(la);
+  if (pushOutOfBody(el, CFG.armMarginElbow * sc)) aimBone(ua, la, el.sub(worldPos(ua)));
+  const elp = worldPos(la), wr = worldPos(hd);
+  const c = contactAlong(elp, wr, CFG.armMarginWrist * sc);
+  if (c) solveTwoBone(ua, la, hd, c);        // wrist pinned to the contact point; the elbow finds its own place
+  if (mp) {
+    const h = worldPos(hd), palm = h.clone().lerp(worldPos(mp), .6);
+    const cp = contactAlong(h, palm, CFG.armMarginHand * sc);
+    if (cp) {
+      const tip = h.clone().addScaledVector(cp.clone().sub(h).normalize(), h.distanceTo(palm));
+      pushOutOfBody(tip, CFG.armMarginHand * sc);
+      aimBone(hd, mp, tip.sub(h));
+    }
+  }
+}
+
+// ── hair spring: Verlet chains on bones named cc_hair_* / Hair_* (root pinned to its parent, usually Head) ──
+const HAIR_RE = /^(cc_hair_|Hair_|cc_ribbon_)/;     // cc_ribbon_* = ribbon tails hanging from the wrist bows
+const HAIR = { chains: [], prevHand: new Map() };
+function setupHair() {
+  HAIR.chains = [];
+  for (const b of Object.values(AV.bones)) {
+    if (!HAIR_RE.test(b.name) || HAIR_RE.test(b.parent?.name || '')) continue;
+    const bones = [b];
+    for (let c = b; ;) { const n = c.children.find(k => k.isBone && HAIR_RE.test(k.name)); if (!n) break; bones.push(n); c = n; }
+    // rest points: each bone's head, plus a tip extrapolated along the last segment
+    const pts = bones.map(x => RIG.restPos.get(x).clone());
+    const last = pts.length > 1 ? pts[pts.length - 1].clone().sub(pts[pts.length - 2]) : new THREE.Vector3(0, -.08, 0);
+    pts.push(pts[pts.length - 1].clone().add(last));
+    const len = pts.slice(1).map((p, i) => p.distanceTo(pts[i]));
+    // rest points in the root's parent (head) space, so targets follow the head
+    const inv = new THREE.Matrix4().copy(b.parent.matrixWorld).invert();
+    const lb = bones[bones.length - 1];
+    const tipDir = last.clone().normalize().applyQuaternion(RIG.restWorld.get(lb).clone().invert());   // last bone's own rest direction
+    // a cuff ribbon ignores its own hand's spheres (it hangs right off that wrist)
+    const own = /^cc_ribbon_L/.test(b.name) ? 'Left' : /^cc_ribbon_R/.test(b.name) ? 'Right' : null;
+    HAIR.chains.push({ bones, len, tipDir, own, local: pts.map(p => p.clone().applyMatrix4(inv)), x: null, xp: null });
+  }
+}
+const _hv = new THREE.Vector3(), _hv2 = new THREE.Vector3(), _hq = new THREE.Quaternion();
+function stepHair(dt) {
+  if (!HAIR.chains.length) return;
+  const on = CFG.hairSpring, f = Math.min(dt, 1 / 20) * 60;     // 60 Hz-normalised
+  // hair and cuff ribbons share the solver but not the material: ribbons are light cloth that hangs
+  const PRM = [false, true].map(rib => {
+    const c = k => CFG[(rib ? 'ribbon' : 'hair') + k];
+    return { drag: Math.pow(1 - c('Drag'), f), stiff: 1 - Math.pow(1 - c('Stiff'), f), inertia: c('Inertia'),
+             g: new THREE.Vector3(0, -c('Gravity') * dt * dt, 0) };
+  });
+  const head = B('Head'), hc = head ? worldPos(head, new THREE.Vector3()) : null;
+  const R = CFG.hairHeadRadius;
+  if (hc) hc.y += R * .6;
+  // hand spheres (palm, knuckles, fingertips) with their velocity, for combing / brushing the hair
+  const handS = [], scl = AV.root.scale.x / (AV.baseScale || 1);
+  if (CFG.hairHandCollide && on) for (const s of SIDES) {
+    for (const [n, rr] of [[s + 'Hand', 1], [s + 'MiddleProximal', .8], [s + 'IndexDistal', .45], [s + 'MiddleDistal', .45], [s + 'RingDistal', .45]]) {
+      const b = B(n); if (!b) continue;
+      const p = worldPos(b), prev = HAIR.prevHand.get(n);
+      const v = prev ? p.clone().sub(prev).divideScalar(Math.max(dt, 1e-3)) : new THREE.Vector3();
+      if (v.length() > 6) v.setLength(6);                                // ignore teleports
+      HAIR.prevHand.set(n, p.clone());
+      handS.push({ p, r: CFG.hairHandRadius * rr * scl, v, side: s });
+    }
+  }
+  for (const ch of HAIR.chains) {
+    const par = ch.bones[0].parent; par.updateMatrixWorld(true);
+    const tgt = ch.local.map(p => p.clone().applyMatrix4(par.matrixWorld));
+    if (!ch.x || !on) { ch.x = tgt.map(p => p.clone()); ch.xp = tgt.map(p => p.clone()); }
+    const x = ch.x, xp = ch.xp, pr = PRM[ch.own ? 1 : 0];
+    const Rc = ch.own ? R + .02 : R;                 // ribbons are ~3.5 cm wide: keep their centreline further off the face
+    x[0].copy(tgt[0]); xp[0].copy(tgt[0]);
+    for (let i = 1; i < x.length; i++) {
+      _hv.subVectors(x[i], xp[i]).multiplyScalar(pr.drag * pr.inertia);
+      xp[i].copy(x[i]);
+      x[i].add(_hv).add(pr.g).add(_hv2.subVectors(tgt[i], x[i]).multiplyScalar(pr.stiff));
+    }
+    for (let it = 0; it < 3; it++) for (let i = 1; i < x.length; i++) {
+      _hv.subVectors(x[i], x[i - 1]); const l = _hv.length() || 1e-6;
+      x[i].copy(x[i - 1]).addScaledVector(_hv, ch.len[i - 1] / l);
+      if (hc) { _hv.subVectors(x[i], hc); const d = _hv.length(); if (d < Rc) x[i].copy(hc).addScaledVector(_hv, Rc / Math.max(d, 1e-6)); }
+    }
+    // hands: hair points inside a hand sphere are pushed out and dragged along with the hand (comb / brush aside)
+    if (handS.length) {
+      for (let i = 1; i < x.length; i++) for (const h of handS) {
+        if (h.side === ch.own) continue;
+        _hv.subVectors(x[i], h.p); const d = _hv.length();
+        if (d < h.r) {
+          x[i].copy(h.p).addScaledVector(_hv, h.r / Math.max(d, 1e-6));
+          x[i].addScaledVector(h.v, dt * CFG.hairHandDrag * (1 - d / h.r));
+        }
+      }
+      for (let i = 1; i < x.length; i++) {                              // keep the strand length after the push
+        _hv.subVectors(x[i], x[i - 1]); const l = _hv.length() || 1e-6;
+        x[i].copy(x[i - 1]).addScaledVector(_hv, ch.len[i - 1] / l);
+      }
+    }
+    // bones follow the simulated points (parent → child)
+    for (let i = 0; i < ch.bones.length; i++) {
+      const bone = ch.bones[i], next = ch.bones[i + 1];
+      const want = _hv.subVectors(x[i + 1], x[i]).normalize();
+      const b = baseWorld(bone, _q[1]);
+      const restDir = next ? restAim(bone, next) : ch.tipDir;
+      const cur = _hv2.copy(restDir).applyQuaternion(b).normalize();
+      setWorldQuat(bone, _hq.setFromUnitVectors(cur, want).multiply(b));
+    }
+  }
+}
+
+// ── bone helpers (world-space deltas over rest) ──
+const _q = [0, 1, 2, 3, 4].map(() => new THREE.Quaternion()), _v = [0, 1, 2].map(() => new THREE.Vector3());
+const ID = new THREE.Quaternion();
+function baseWorld(bone, out) { bone.parent.getWorldQuaternion(out); return out.multiply(AV.rest.get(bone).q); }
+function setWorldQuat(bone, wq) {
+  const pq = bone.parent.getWorldQuaternion(_q[0]).invert();
+  bone.quaternion.copy(pq.multiply(wq)); bone.updateMatrixWorld(true);
+}
+function rotateWorld(bone, dq) { if (!bone) return; const b = baseWorld(bone, _q[1]); setWorldQuat(bone, _q[2].copy(dq).multiply(b)); }
+// direction from `bone` to `child` in the bone's own rest frame (child may be a grandchild, e.g. Hand → Meta → Proximal)
+const aimCache = new Map();
+function restAim(bone, child) {
+  const key = bone.uuid + child.uuid;
+  if (!aimCache.has(key)) {
+    const d = RIG.restPos.get(child).clone().sub(RIG.restPos.get(bone));
+    aimCache.set(key, d.applyQuaternion(RIG.restWorld.get(bone).clone().invert()).normalize());
+  }
+  return aimCache.get(key);
+}
+function aimVec(bone, localDir, dirW) {          // like aimBone, but with an explicit rest direction in the bone's frame
+  if (!bone || !localDir) return;
+  const b = baseWorld(bone, _q[1]);
+  const cur = _v[0].copy(localDir).applyQuaternion(b).normalize();
+  setWorldQuat(bone, _q[2].setFromUnitVectors(cur, _v[1].copy(dirW).normalize()).multiply(b));
+}
+function aimBone(bone, child, dirW) {
+  if (!bone || !child) return;
+  const b = baseWorld(bone, _q[1]);
+  const cur = _v[0].copy(restAim(bone, child)).applyQuaternion(b).normalize();
+  const d = _q[2].setFromUnitVectors(cur, _v[1].copy(dirW).normalize());
+  setWorldQuat(bone, d.multiply(b));
+}
+function resetPose() { for (const [bone, r] of AV.rest) { bone.quaternion.copy(r.q); bone.position.copy(r.p); } AV.root.updateMatrixWorld(true); }
+function setMorph(name, v) { const l = AV.morphs[name]; if (l) for (const [m, i] of l) m.morphTargetInfluences[i] = v; }
+function setMorphOn(meshName, name, v) { const l = AV.morphs[name]; if (l) for (const [m, i] of l) if (m.name.startsWith(meshName)) m.morphTargetInfluences[i] = v; }
+
+function applyLook() {
+  if (!AV.root) return;
+  LOOK.uShadow.value.set(CFG.toonShadow); LOOK.uLo.value = CFG.toonSoftLo; LOOK.uHi.value = CFG.toonSoftHi;
+  updateKeyLight();
+  for (const m of AV.meshes) {
+    m.material = m.userData.mats[CFG.shading] || m.userData.mats.standard;
+    if (m.name.startsWith('Weapon')) m.visible = CFG.showWeapon;
+    const ol = m.userData.outline;
+    if (ol) {
+      ol.visible = CFG.outline && m.visible;
+      // width is given in world metres; the mesh may be scaled by the glTF + our height normalisation
+      const ws = m.getWorldScale(new THREE.Vector3()).x || 1;
+      m.userData.outlineU.uOutline.value = CFG.outlineWidth / ws;
+    }
+  }
+}
+const FRAMES = { bust: [0, -.06, 1.15], half: [0, -.32, 2.2], full: [0, -.75, 4.4] };
+function frameCamera(snap) {
+  const [x, dy, dist] = FRAMES[CFG.camFrame] || FRAMES.half;
+  const t = new THREE.Vector3(x, headPos.y + dy, 0);
+  controls.target.copy(t); camera.position.set(t.x, t.y + .05, dist);
+  if (snap) controls.update();
+}
+const MODELS = { sheep: 'models/sheep.glb', undertaker: 'models/undertaker.glb' };
+function onCfg(k) {
+  if (k === 'model') { AV.ready = false; loadAvatar(MODELS[CFG.model] || MODELS.sheep).then(() => toast('MODEL ' + CFG.model.toUpperCase())).catch(e => toast('LOAD FAIL')); return; }
+  if (k === 'skinning' && AV.meshes) for (const m of AV.meshes) {
+    for (const mat of Object.values(m.userData.mats || {})) mat.needsUpdate = true;
+    if (m.userData.outline) m.userData.outline.material.needsUpdate = true;
+  }
+  if (['shading', 'showWeapon', 'outline', 'outlineWidth', 'toonShadow', 'toonSoftLo', 'toonSoftHi', 'castShadows', 'castShadowAmt'].includes(k)) applyLook();
+  if (k === 'scanView') scanBox.hidden = !CFG.scanView || mode !== 'cam';
+  if (['viewMode', 'possessBg', 'camFov', 'mirror', 'bgColor'].includes(k)) {
+    const was = controls.enabled; resize();
+    if (!possessActive() && !was) frameCamera(true);
+    pip.hidden = !CFG.showPip || mode !== 'cam' || possessActive();
+  }
+  if (k === 'camFrame') frameCamera(true);
+  if (k === 'showPip') pip.hidden = !CFG.showPip || mode !== 'cam';
+  if (k === 'micLipsync' && CFG.micLipsync && !MIC.on) startMic();
+  if (k === 'showFaceBars') bars.hidden = !CFG.showFaceBars;
+}
+
+// ═════════════════════════ tracking state (targets) ═════════════════════════
+// raw targets set by trackers; smoothed values used for posing
+const T = {
+  head: { yaw: 0, pitch: 0, roll: 0, ok: false },
+  torso: { yaw: 0, roll: 0, ok: false },
+  arm: { Left: { up: null, lo: null, hand: null, handRot: null }, Right: { up: null, lo: null, hand: null, handRot: null } },
+  curl: {},            // boneName → angle
+  face: {},            // morph → value
+  faceSeen: 0, poseSeen: 0, handSeen: { Left: 0, Right: 0 },
+};
+const S = { faceV: {}, fdir: {}, head: { yaw: 0, pitch: 0, roll: 0 }, torso: { yaw: 0, roll: 0 }, arm: { Left: {}, Right: {} }, curl: {}, face: {}, handRotW: { Left: 0, Right: 0 } };
+const CAL = { yaw: 0, pitch: 0, roll: 0, tYaw: 0, tRoll: 0, hYaw: 0, hRoll: 0, hipX: null, hipY: null };
+let RAW = { yaw: 0, pitch: 0, roll: 0, tYaw: 0, tRoll: 0, hYaw: 0, hRoll: 0, hipX: null, hipY: null };
+// full body: hips (rotation + root move), legs, feet
+T.hips = { yaw: 0, roll: 0, ok: false, dx: 0, dy: 0 };
+T.lean = { hp: 0, hs: 0, fp: 0, fs: 0, hipsOK: false, faceOK: false }; T.shrug = { Left: 0, Right: 0 };
+S.lean = { p: 0, s: 0 }; S.shrug = { Left: 0, Right: 0 };
+T.leg = { Left: { up: null, lo: null, ft: null }, Right: { up: null, lo: null, ft: null } };
+S.hips = { yaw: 0, roll: 0, dx: 0, dy: 0 }; S.leg = { Left: {}, Right: {} }; S.ground = 0;
+function calibrate() {
+  Object.assign(CAL, { yaw: RAW.yaw, pitch: RAW.pitch, roll: RAW.roll, tYaw: RAW.tYaw, tRoll: RAW.tRoll,
+    hYaw: RAW.hYaw, hRoll: RAW.hRoll, hipX: RAW.hipX, hipY: RAW.hipY,
+    lP: RAW.lP, lS: RAW.lS, fx: RAW.fx, fz: RAW.fz, shLeft: RAW.shLeft, shRight: RAW.shRight });
+  toast('CALIBRATED');
+}
+const lerpK = (speed, dt) => 1 - Math.exp(-speed * dt);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const remap = (x, a, b) => clamp((x - a) / Math.max(1e-4, b - a), 0, 1);
+
+// ═════════════════════════ MediaPipe ═════════════════════════
+const TV = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MP_MODELS = {
+  face: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+  pose_lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+  pose_full: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
+  pose_heavy: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task',
+  hand: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+  seg: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+};
+const MP = { face: null, pose: null, hand: null };
+let mode = 'none';
+const video = document.getElementById('v');
+const statusEl = document.getElementById('status');
+const pip = document.getElementById('pip'), pctx = pip.getContext('2d');
+
+// camera failures → a reason the visitor can act on (+ retry / new tab buttons in the intro)
+function camError(e) {
+  console.error(e);
+  const n = e?.name || '', inFrame = window.top !== window;
+  let msg;
+  if (!window.isSecureContext || !navigator.mediaDevices) msg = 'หน้านี้เปิดกล้องไม่ได้ (ต้องเปิดผ่าน https, localhost หรือไฟล์ในเครื่องด้วย Chrome / Edge)';
+  else if (n === 'NotAllowedError' || n === 'SecurityError') msg = 'เบราว์เซอร์ไม่อนุญาตให้ใช้กล้อง → กดไอคอนกล้อง/แม่กุญแจตรงช่อง URL เลือก "อนุญาต" แล้วกด "ลองอีกครั้ง"'
+    + (inFrame ? ' · หรือกด "เปิดในแท็บใหม่"' : '') + ' (หน้าต่างเบราว์เซอร์ในแอป Claude ใช้กล้องไม่ได้ ให้เปิดใน Chrome)';
+  else if (n === 'NotFoundError' || n === 'OverconstrainedError') msg = 'ไม่เจอกล้องในเครื่อง → เสียบกล้องแล้วกด "ลองอีกครั้ง" หรือเล่นแบบไม่ใช้กล้อง';
+  else if (n === 'NotReadableError' || n === 'AbortError') msg = 'กล้องถูกโปรแกรมอื่นใช้อยู่ (OBS / Discord / Zoom / แท็บอื่น) → ปิดก่อนแล้วกด "ลองอีกครั้ง"';
+  else msg = 'เปิดกล้องไม่ได้: ' + (e?.message || n || e);
+  statusEl.textContent = msg; statusEl.classList.add('err');
+  document.getElementById('intro').hidden = false;
+  goCam.textContent = '↻ ลองอีกครั้ง';
+  if (inFrame) {
+    const nt = document.getElementById('newTab'), u = new URL(location.href);
+    u.searchParams.delete('embed'); u.searchParams.set('autostart', '1'); nt.href = u.href; nt.hidden = false;
+  }
+}
+async function startCam() {
+  statusEl.textContent = 'ขอสิทธิ์กล้อง… กด "อนุญาต" ถ้าเบราว์เซอร์ถาม'; statusEl.classList.remove('err');
+  if (!navigator.mediaDevices?.getUserMedia) throw Object.assign(new Error('no mediaDevices'), { name: 'SecurityError' });
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 960 }, height: { ideal: 540 }, facingMode: 'user' }, audio: false });
+  video.srcObject = stream; await video.play();
+  statusEl.textContent = 'โหลดโมเดล MediaPipe (ครั้งแรกใช้เน็ต)…';
+  const vision = await import(TV + '/vision_bundle.mjs');
+  const fs = await vision.FilesetResolver.forVisionTasks(TV + '/wasm');
+  const base = p => ({ baseOptions: { modelAssetPath: p, delegate: CFG.delegate }, runningMode: 'VIDEO' });
+  [MP.face, MP.pose, MP.hand] = await Promise.all([
+    vision.FaceLandmarker.createFromOptions(fs, { ...base(MP_MODELS.face), numFaces: 1, outputFaceBlendshapes: true, outputFacialTransformationMatrixes: true }),
+    vision.PoseLandmarker.createFromOptions(fs, { ...base(MP_MODELS['pose_' + CFG.poseModel] || MP_MODELS.pose_full), numPoses: 1 }),
+    vision.HandLandmarker.createFromOptions(fs, { ...base(MP_MODELS.hand), numHands: 2 }),
+  ]);
+  try {   // person segmentation for the "remove the real person" background (optional — the page works without it)
+    MP.seg = await vision.ImageSegmenter.createFromOptions(fs, { ...base(MP_MODELS.seg), outputCategoryMask: false, outputConfidenceMasks: true });
+  } catch (e) { console.warn('segmenter', e); MP.seg = null; }
+  mode = 'cam';
+  resize(); pip.hidden = !CFG.showPip || possessActive();
+  VISION = vision; initScan(); scanBox.hidden = !CFG.scanView;
+  if (CFG.micLipsync && !MIC.on) startMic();
+  document.getElementById('intro').hidden = true;
+  toast('มองตรงแล้วกด C เพื่อ calibrate');
+}
+
+// avatar side ↔ subject side (mirror: your right drives the avatar's left = right side of screen)
+const subjOf = av => CFG.mirror ? (av === 'Left' ? 'Right' : 'Left') : av;
+const POSE_IDX = { Left: { sh: 11, el: 13, wr: 15, pi: 17, ix: 19, hip: 23, kn: 25, an: 27, he: 29, to: 31 },
+  Right: { sh: 12, el: 14, wr: 16, pi: 18, ix: 20, hip: 24, kn: 26, an: 28, he: 30, to: 32 } };
+// MediaPipe world coords (x right in image, y down, z away) → avatar space (x = avatar left/screen right, y up, z toward camera)
+function toAv(p, zs = 1, out = new THREE.Vector3()) { return out.set((CFG.mirror ? -1 : 1) * p.x, -p.y, -p.z * zs); }
+
+let lastVT = -1, frameN = 0, detMs = 0, lastPose = null, lastHands = null, lastFace = null;
+function detect() {
+  if (mode !== 'cam' || video.readyState < 2 || video.currentTime === lastVT) return;
+  lastVT = video.currentTime; frameN++;
+  const t0 = performance.now(), ts = t0;
+  lastFace = CFG.trackFace ? MP.face.detectForVideo(video, ts) : null;
+  lastPose = CFG.trackPose ? MP.pose.detectForVideo(video, ts) : null;
+  if (CFG.trackHands && frameN % CFG.handsEvery === 0) lastHands = MP.hand.detectForVideo(video, ts);
+  else if (!CFG.trackHands) lastHands = null;
+  if (MP.seg && possessActive() && (CFG.possessBg === 'clean' || CFG.possessBg === 'blur') && frameN % CFG.segEvery === 0) {
+    MP.seg.segmentForVideo(video, ts, res => {
+      const ms = res.confidenceMasks; const m = ms?.[ms.length - 1];
+      if (m) { SEG.mask = m.getAsFloat32Array().slice(); SEG.mw = m.width; SEG.mh = m.height; SEG.t = performance.now(); }
+    });
+  }
+  detMs = performance.now() - t0;
+  if (CFG.tongueDetect) readTongue(lastFace);
+  readFace(lastFace); readPose(lastPose); if (frameN % CFG.handsEvery === 0 || !CFG.trackHands) readHands(lastHands, lastPose);
+}
+
+// ── tongue: MediaPipe has no tongue blendshape, so look at the camera pixels ──
+// Patch just under the lower lip (lm 17 → chin 152) vs a cheek patch: a tongue over the lower lip/chin makes that
+// patch much redder than skin. Score = redness difference, remapped by tongueLow..tongueHigh (Inspector, live readout).
+const tc = document.createElement('canvas'); tc.width = 192; tc.height = 144;
+const tctx = tc.getContext('2d', { willReadFrequently: true });
+T.tongue = 0; T.tongueRaw = 0;
+function redness(img, cx, cy, rad) {
+  const W = tc.width, H = tc.height; let s = 0, n = 0;
+  for (let y = Math.max(0, cy - rad | 0); y <= Math.min(H - 1, cy + rad | 0); y++)
+    for (let x = Math.max(0, cx - rad | 0); x <= Math.min(W - 1, cx + rad | 0); x++) {
+      const i = (y * W + x) * 4, R = img[i], G = img[i + 1], B = img[i + 2], sum = R + G + B + 1;
+      s += (R - G) / sum; n++;
+    }
+  return n ? s / n : 0;
+}
+function readTongue(r) {
+  const f = r?.faceLandmarks?.[0];
+  if (!f) { T.tongue = 0; return; }
+  const W = tc.width, H = tc.height;
+  tctx.drawImage(video, 0, 0, W, H);
+  const img = tctx.getImageData(0, 0, W, H).data;
+  const lip = f[17], chin = f[152], cl = f[61], cr = f[291], cheekL = f[205], cheekR = f[425];
+  const mw = Math.hypot((cl.x - cr.x) * W, (cl.y - cr.y) * H);
+  const px = lip.x + (chin.x - lip.x) * .3, py = lip.y + (chin.y - lip.y) * .3;
+  const rad = Math.max(2, mw * .18);
+  const below = redness(img, px * W, py * H, rad);
+  const ref = (redness(img, cheekL.x * W, cheekL.y * H, rad) + redness(img, cheekR.x * W, cheekR.y * H, rad)) / 2;
+  T.tongueRaw = below - ref;
+  T.tongue = clamp(remap(T.tongueRaw, CFG.tongueLow, CFG.tongueHigh) * CFG.tongueGain, 0, 1);
+}
+
+// ── microphone lipsync: loudness → mouth, spectral shape → vowel (rough formant bands) ──
+const MIC = { on: false, an: null, buf: null, vol: 0, w: { A: 0, I: 0, U: 0, E: 0, O: 0 } };
+const VOWEL_PROTO = { A: [.30, .42, .20, .08], I: [.45, .07, .22, .26], U: [.72, .16, .08, .04], E: [.34, .24, .32, .10], O: [.50, .37, .09, .04] };
+async function startMic() {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+    const ac = new AudioContext(), src = ac.createMediaStreamSource(st);
+    MIC.an = ac.createAnalyser(); MIC.an.fftSize = 2048; MIC.an.smoothingTimeConstant = .5;
+    src.connect(MIC.an); MIC.buf = new Float32Array(MIC.an.frequencyBinCount); MIC.sr = ac.sampleRate; MIC.on = true;
+    toast('MIC ON');
+  } catch (e) { toast('MIC: ' + e.message); setCfg('micLipsync', false); }
+}
+function readMic() {
+  if (!MIC.on || !CFG.micLipsync) { MIC.vol = 0; return; }
+  MIC.an.getFloatFrequencyData(MIC.buf);
+  const hz = MIC.sr / MIC.an.fftSize, band = [0, 0, 0, 0], edges = [250, 700, 1300, 2500, 4000];
+  let tot = 0;
+  for (let i = 1; i < MIC.buf.length; i++) {
+    const f = i * hz; if (f < edges[0] || f >= edges[4]) continue;
+    const p = Math.pow(10, MIC.buf[i] / 10); tot += p;
+    for (let b = 0; b < 4; b++) if (f < edges[b + 1]) { band[b] += p; break; }
+  }
+  const db = 10 * Math.log10(tot + 1e-12);
+  MIC.vol = clamp((db + 75) / 40 * CFG.micGain, 0, 1);            // ~-75 dB silence → 0
+  if (tot <= 0) return;
+  const v = band.map(b => b / tot); let sum = 0; const sc = {};
+  for (const [k, p] of Object.entries(VOWEL_PROTO)) {
+    const d = Math.hypot(...v.map((x, i) => x - p[i])); sc[k] = Math.exp(-d * d / .02); sum += sc[k];
+  }
+  for (const k in sc) MIC.w[k] = sc[k] / (sum || 1);
+}
+
+const _m4 = new THREE.Matrix4(), _pos = new THREE.Vector3(), _sc = new THREE.Vector3(), _qq = new THREE.Quaternion(), _eu = new THREE.Euler();
+function readFace(r) {
+  if (!r || !r.faceBlendshapes?.length) { T.head.ok = false; T.lean.faceOK = false; return; }
+  T.faceSeen = performance.now();
+  _m4.fromArray(r.facialTransformationMatrixes[0].data).decompose(_pos, _qq, _sc);
+  _eu.setFromQuaternion(_qq, 'YXZ');
+  const mir = CFG.mirror ? -1 : 1;
+  RAW.yaw = _eu.y * mir; RAW.pitch = _eu.x; RAW.roll = _eu.z * mir;
+  const L = CFG.headLimit;
+  T.head.yaw = clamp((RAW.yaw - CAL.yaw) * CFG.headGain * CFG.headYawSign, -L, L);
+  T.head.pitch = clamp((RAW.pitch - CAL.pitch) * CFG.headGain * CFG.headPitchSign + CFG.headPitchOffset, -L, L);
+  T.head.roll = clamp((RAW.roll - CAL.roll) * CFG.headGain * CFG.headRollSign, -L, L);
+  const tf = performance.now() / 1000;
+  // head position (cm, camera space) → lean when the hips are not visible (sitting at a desk):
+  // closer to the camera = lean forward, sideways = side lean
+  RAW.fx = _pos.x; RAW.fz = _pos.z;
+  if (CAL.fx === undefined) { CAL.fx = _pos.x; CAL.fz = _pos.z; }
+  T.lean.fp = oe('lfp', (RAW.fz - CAL.fz) * .025, tf);
+  T.lean.fs = oe('lfs', (CFG.mirror ? 1 : -1) * (RAW.fx - CAL.fx) * .02, tf);
+  T.lean.faceOK = true;
+  // face origin in camera space (MediaPipe: centimetres, camera looks −Z) → metres, mirrored like the video
+  T.facePos = oeV('fpos', new THREE.Vector3((CFG.mirror ? -1 : 1) * _pos.x / 100, _pos.y / 100, _pos.z / 100), tf);
+  T.head.yaw = oe('hy', T.head.yaw, tf); T.head.pitch = oe('hp', T.head.pitch, tf); T.head.roll = oe('hr', T.head.roll, tf);
+  prSet('hy', T.head.yaw, tf, .35); prSet('hp', T.head.pitch, tf, .35); prSet('hr', T.head.roll, tf, .35);
+  prSetV('fpos', T.facePos, tf, .08);
+  T.head.ok = true;
+
+  const bs = {}; for (const c of r.faceBlendshapes[0].categories) bs[c.categoryName] = c.score;
+  T.bs = bs;
+  const swap = CFG.mirror !== CFG.swapFaceLR;            // avatar L ← subject R when mirrored
+  const sub = a => (a === 'L') === swap ? 'Right' : 'Left'; // a: avatar 'L'|'R' → subject side name
+  const F = T.face, has = n => !!AV.morphs[n];
+  const detailBrows = has('BrowInnerUp');                  // model has separate inner/outer brow keys
+  for (const a of ['L', 'R']) {
+    const s = sub(a);
+    const happy = has('EyeHappy_' + a) ? clamp(remap(bs['cheekSquint' + s], .2, .65) * CFG.happyGain, 0, 1) : 0;
+    F['EyeHappy_' + a] = happy;
+    F['Blink_' + a] = remap(bs['eyeBlink' + s], CFG.blinkLow, CFG.blinkHigh) * (1 - happy * .75);   // happy eye already closes the lid
+    F['EyeWide_' + a] = clamp(remap(bs['eyeWide' + s], .05, .45) * CFG.eyeWideGain, 0, 1);
+    F['EyeSquint_' + a] = clamp(bs['eyeSquint' + s] * CFG.squintGain * (1 - happy), 0, 1);
+    if (detailBrows) {
+      F['BrowOuterUp_' + a] = clamp(bs['browOuterUp' + s] * CFG.browGain, 0, 1);
+      F['BrowUp_' + a] = 0;
+    } else F['BrowUp_' + a] = clamp(((bs['browOuterUp' + s] + bs.browInnerUp) / 2) * CFG.browGain, 0, 1);
+    F['BrowDown_' + a] = clamp(bs['browDown' + s] * CFG.browGain, 0, 1);
+    F['Smile_' + a] = clamp(bs['mouthSmile' + s] * CFG.smileGain, 0, 1);
+    F['Frown_' + a] = clamp(bs['mouthFrown' + s] * CFG.smileGain, 0, 1);
+    F['CheekPuff_' + a] = clamp(remap(bs.cheekPuff, .03, .3) * CFG.cheekGain, 0, 1);   // MediaPipe's cheekPuff rarely goes past ~.35
+  }
+  F.BrowInnerUp = detailBrows ? clamp(bs.browInnerUp * CFG.browGain, 0, 1) : 0;
+  if (CFG.linkBlink) { const b = Math.max(F.Blink_L, F.Blink_R); F.Blink_L = F.Blink_R = b; }
+  F.BrowFurrow = clamp((bs.browDownLeft + bs.browDownRight) / 2 * CFG.browGain * .6, 0, 1);
+  const ml = bs.mouthLeft * 2, mr = bs.mouthRight * 2;
+  F.MouthLeft = clamp(CFG.mirror ? mr : ml, 0, 1); F.MouthRight = clamp(CFG.mirror ? ml : mr, 0, 1);
+  // mouth: either raw shapes, or visemes (A I U E O) read from the same blendshapes
+  const open = bs.jawOpen, funnel = bs.mouthFunnel, pucker = bs.mouthPucker;
+  const stretch = (bs.mouthStretchLeft + bs.mouthStretchRight) / 2, smile = (bs.mouthSmileLeft + bs.mouthSmileRight) / 2;
+  const vowelsOK = CFG.mouthMode === 'vowel' && has('Mouth_A');
+  if (vowelsOK) {
+    const g = CFG.vowelGain;
+    // U = lips pushed forward and nearly closed; O = rounded AND open. Pucker and funnel fire together, so U takes
+    // pucker minus part of funnel, and O needs the jaw open — otherwise "U" always came out as "O"
+    const U = clamp((pucker * 2.4 - funnel * .5) * (1 - remap(open, .15, .45)) * CFG.uGain * g, 0, 1);
+    const O = clamp(funnel * 1.8 * remap(open, .04, .2) * (1 - U * .7) * g, 0, 1);
+    const I = clamp((stretch * 1.8 + smile * .4) * (1 - remap(open, .18, .45)) * g, 0, 1);
+    const E = clamp(stretch * 2.2 * remap(open, .08, .3) * (1 - remap(open, .4, .65)) * g, 0, 1);
+    const A = clamp(remap(open, .1, .55) * (1 - O * .8) * (1 - U * .6) * g, 0, 1);
+    Object.assign(F, { Mouth_A: A, Mouth_I: I, Mouth_U: U, Mouth_E: E, Mouth_O: O, MouthOpen: 0, MouthPucker: 0, MouthWide: 0 });
+  } else {
+    Object.assign(F, { Mouth_A: 0, Mouth_I: 0, Mouth_U: 0, Mouth_E: 0 });
+    F.MouthOpen = clamp(remap(open, .04, .55) * CFG.jawGain, 0, 1);
+    F.MouthPucker = clamp(pucker * 1.4, 0, 1);
+    F.Mouth_O = clamp(funnel * 1.6, 0, 1);
+    F.MouthWide = clamp(stretch * 3, 0, 1);
+  }
+  F.TongueOut = CFG.tongueDetect ? T.tongue : 0;
+  // pressed lips: mouthPress / lips rolled in, only while the jaw is closed
+  const press = Math.max((bs.mouthPressLeft + bs.mouthPressRight) / 2, (bs.mouthRollLower + bs.mouthRollUpper) / 2 * 1.2);
+  F.MouthPress = clamp(remap(press, .06, .4) * CFG.pressGain * (1 - remap(open, .08, .25)), 0, 1);
+  // gaze: h > 0 = subject looks toward their own left
+  let h = ((bs.eyeLookOutLeft + bs.eyeLookInRight) - (bs.eyeLookInLeft + bs.eyeLookOutRight)) / 2;
+  if (CFG.mirror) h = -h; if (CFG.flipGazeX) h = -h;        // h > 0 → avatar looks to its own left
+  const vUp = (bs.eyeLookUpLeft + bs.eyeLookUpRight) / 2, vDn = (bs.eyeLookDownLeft + bs.eyeLookDownRight) / 2;
+  F.LookLeft = clamp(h * CFG.gazeGain, 0, 1); F.LookRight = clamp(-h * CFG.gazeGain, 0, 1);
+  F.LookUp = clamp((vUp - vDn) * CFG.gazeGain, 0, 1); F.LookDown = clamp((vDn - vUp) * CFG.gazeGain * (1 - Math.max(F.Blink_L, F.Blink_R)), 0, 1);
+}
+
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
+function readPose(r) {
+  if (!r || !r.worldLandmarks?.length) {
+    T.torso.ok = false; T.hips.ok = false;
+    for (const s of SIDES) { Object.assign(T.arm[s], { up: null, lo: null, hand: null }); Object.assign(T.leg[s], { up: null, lo: null, ft: null }); }
+    return;
+  }
+  T.poseSeen = performance.now();
+  const w = r.worldLandmarks[0], n = r.landmarks[0];
+  const vis = i => n[i].visibility ?? 1;
+  // torso from shoulder line (avatar-left shoulder minus avatar-right shoulder)
+  const sl = toAv(w[POSE_IDX[subjOf('Left')].sh], 1, _a), sr = toAv(w[POSE_IDX[subjOf('Right')].sh], 1, _b);
+  const v = _c.subVectors(sl, sr);
+  if (vis(11) > .5 && vis(12) > .5) {
+    RAW.tRoll = Math.atan2(v.y, v.x); RAW.tYaw = Math.atan2(-v.z, v.x);
+    const L = CFG.torsoLimit;
+    T.torso.roll = clamp((RAW.tRoll - CAL.tRoll) * CFG.torsoRollGain, -L, L);
+    T.torso.yaw = clamp((RAW.tYaw - CAL.tYaw) * CFG.torsoYawGain, -L, L);
+    const tt = performance.now() / 1000;
+    T.torso.roll = oe('tr', T.torso.roll, tt); T.torso.yaw = oe('ty', T.torso.yaw, tt);
+    prSet('tr', T.torso.roll, tt, .3); prSet('ty', T.torso.yaw, tt, .3);
+    T.torso.ok = true;
+  } else T.torso.ok = false;
+  const tp = performance.now() / 1000;
+  for (const s of SIDES) {
+    const I = POSE_IDX[subjOf(s)], A = T.arm[s];
+    // joints are One-Euro filtered as points (z is the noisiest axis of MediaPipe pose)
+    const sh = oeV(s + 'sh', toAv(w[I.sh], CFG.armZScale, _a), tp), el = oeV(s + 'el', toAv(w[I.el], CFG.armZScale, _b), tp),
+      wr = oeV(s + 'wr', toAv(w[I.wr], CFG.armZScale, _c), tp);
+    // visibility with hysteresis (on above armVisMin, off only below armVisMin − armVisHyst), a boost when the hand
+    // tracker currently sees this hand, and a short hold of the last good direction — a raised arm near the frame
+    // edge used to flicker between tracked and "arm down"
+    const now = performance.now(), boost = now - (T.handSeen[s] || 0) < 250 ? CFG.armHandBoost : 0;
+    const st = A.st || (A.st = { up: false, lo: false, upT: 0, loT: 0 });
+    const on = (was, v) => was ? v > CFG.armVisMin - CFG.armVisHyst : v > CFG.armVisMin;
+    st.up = on(st.up, vis(I.el) + boost); st.lo = on(st.lo, vis(I.wr) + boost);
+    if (st.up) { A.up = (A.up || new THREE.Vector3()).subVectors(el, sh).normalize(); st.upT = now; }
+    else if (now - st.upT > CFG.armHold * 1000) A.up = null;                 // within the hold: keep the last direction
+    if (st.lo && A.up) { A.lo = (A.lo || new THREE.Vector3()).subVectors(wr, el).normalize(); st.loT = now; }
+    else if (now - st.loT > CFG.armHold * 1000 || !A.up) A.lo = null;
+    if (A.lo && vis(I.ix) > CFG.armVisMin) {
+      const tip = toAv(w[I.ix], CFG.armZScale, _d).add(toAv(w[I.pi], CFG.armZScale, new THREE.Vector3())).multiplyScalar(.5);
+      A.hand = (A.hand || new THREE.Vector3()).subVectors(tip, wr).normalize();
+    } else A.hand = null;
+    // arms move fast (a raise is ~1 rad in 0.2 s), so their warp gate is wide; the speed cap still applies
+    if (A.up && st.up) prSetV('up' + s, A.up, tp, CFG.armGate);
+    if (A.lo && st.lo) prSetV('lo' + s, A.lo, tp, CFG.armGate * 1.2);
+    if (A.hand) prSetV('hd' + s, A.hand, tp, CFG.armGate * 1.3);
+  }
+  readBody(w, n, vis, tp);
+}
+
+// hips + legs from the same pose result (world landmarks are metres around the hip centre)
+function readBody(w, n, vis, tp) {
+  const ok = k => vis(k) > CFG.legVisMin;
+  const hl = POSE_IDX[subjOf('Left')], hr = POSE_IDX[subjOf('Right')];
+  // chest lean from the spine line (shoulder centre − hip centre), and per-side shrug from shoulder-to-ear height
+  const shL = POSE_IDX[subjOf('Left')], shR = POSE_IDX[subjOf('Right')];
+  if (ok(23) && ok(24) && vis(11) > .5 && vis(12) > .5) {
+    const up = toAv(w[shL.sh]).add(toAv(w[shR.sh])).multiplyScalar(.5).sub(toAv(w[shL.hip]).add(toAv(w[shR.hip])).multiplyScalar(.5)).normalize();
+    RAW.lP = Math.atan2(up.z, up.y); RAW.lS = Math.atan2(-up.x, up.y);
+    T.lean.hipsOK = true;
+    T.lean.hp = oe('lhp', RAW.lP - (CAL.lP ?? RAW.lP), tp); T.lean.hs = oe('lhs', RAW.lS - (CAL.lS ?? RAW.lS), tp);
+    if (CAL.lP === undefined) { CAL.lP = RAW.lP; CAL.lS = RAW.lS; }
+  } else T.lean.hipsOK = false;
+  if (vis(7) > .5 && vis(8) > .5 && vis(11) > .5 && vis(12) > .5) {
+    const sw = Math.max(.02, Math.hypot(n[11].x - n[12].x, n[11].y - n[12].y));
+    for (const s of SIDES) {
+      const I = POSE_IDX[subjOf(s)], ear = n[I.sh === 11 ? 7 : 8];
+      const d = (n[I.sh].y - ear.y) / sw;                   // shoulder below ear, in shoulder widths (smaller = shrug)
+      RAW['sh' + s] = d;
+      if (CAL['sh' + s] === undefined) CAL['sh' + s] = d;
+      T.shrug[s] = oe('shg' + s, clamp((CAL['sh' + s] - d) * CFG.shrugGain, -.3, 1), tp);
+    }
+  } else { T.shrug.Left = T.shrug.Right = 0; }
+  if (CFG.trackHips && ok(23) && ok(24)) {
+    const v = new THREE.Vector3().subVectors(toAv(w[hl.hip]), toAv(w[hr.hip]));
+    RAW.hRoll = Math.atan2(v.y, v.x); RAW.hYaw = Math.atan2(-v.z, v.x);
+    T.hips.roll = oe('hr2', clamp((RAW.hRoll - CAL.hRoll) * CFG.hipRollGain, -.5, .5), tp);
+    T.hips.yaw = oe('hy2', clamp((RAW.hYaw - CAL.hYaw) * CFG.hipYawGain, -.8, .8), tp);
+    // root move: hip centre in the image, converted to metres with the shoulder width as the ruler
+    const hx = (n[23].x + n[24].x) / 2, hy = (n[23].y + n[24].y) / 2;
+    const ruler = Math.max(.02, Math.hypot(n[11].x - n[12].x, n[11].y - n[12].y)) / .36;   // image units per metre
+    RAW.hipX = hx; RAW.hipY = hy;
+    if (CAL.hipX === null) { CAL.hipX = hx; CAL.hipY = hy; }
+    T.hips.dx = oe('hdx', clamp((CFG.mirror ? -1 : 1) * (hx - CAL.hipX) / ruler * CFG.rootMoveGain, -.8, .8), tp);
+    T.hips.ok = true;
+  } else T.hips.ok = false;
+  for (const s of SIDES) {
+    const I = POSE_IDX[subjOf(s)], L = T.leg[s];
+    if (!CFG.trackLegs || !ok(I.hip) || !ok(I.kn)) { L.up = L.lo = L.ft = null; continue; }
+    const hip = oeV(s + 'hip', toAv(w[I.hip], CFG.legZScale), tp), kn = oeV(s + 'kn', toAv(w[I.kn], CFG.legZScale), tp);
+    L.up = (L.up || new THREE.Vector3()).subVectors(kn, hip).normalize();
+    if (ok(I.an)) {
+      const an = oeV(s + 'an', toAv(w[I.an], CFG.legZScale), tp);
+      L.lo = (L.lo || new THREE.Vector3()).subVectors(an, kn).normalize();
+      if (ok(I.to)) {
+        const to = oeV(s + 'to', toAv(w[I.to], CFG.legZScale), tp);
+        L.ft = (L.ft || new THREE.Vector3()).subVectors(to, an).normalize();
+      } else L.ft = null;
+    } else L.lo = L.ft = null;
+  }
+}
+
+const FIDX = { Thumb: [1, 2, 3, 4], Index: [5, 6, 7, 8], Middle: [9, 10, 11, 12], Ring: [13, 14, 15, 16], Little: [17, 18, 19, 20] };
+function readHands(r, pose) {
+  const got = { Left: false, Right: false };
+  if (r && r.landmarks?.length) {
+    r.landmarks.forEach((lm, i) => {
+      // which subject hand? nearest pose wrist; fallback to handedness (MediaPipe labels assume a mirrored image)
+      let subj;
+      const pw = pose?.landmarks?.[0];
+      if (pw) {
+        const d = (k) => Math.hypot(pw[k].x - lm[0].x, pw[k].y - lm[0].y);
+        subj = d(15) < d(16) ? 'Left' : 'Right';
+      } else subj = (r.handednesses || r.handedness)[i][0].categoryName === 'Left' ? 'Right' : 'Left';
+      const av = CFG.mirror ? (subj === 'Left' ? 'Right' : 'Left') : subj;
+      if (got[av]) return; got[av] = true;
+      T.handSeen[av] = performance.now();
+      // MediaPipe's hand WORLD landmarks are not guaranteed to use the image's axis directions (the hand model
+      // assumes a selfie-mirrored input). Compare a few bone vectors with the 2D image landmarks and flip x / y of the
+      // world points when they disagree — otherwise the palm comes out mirrored (back of the hand toward the camera).
+      const wl = r.worldLandmarks[i];
+      let sxx = 0, syy = 0, szz = 0, zz = 0;
+      for (const [a, b] of [[0, 9], [5, 17], [0, 5], [0, 17], [9, 12], [5, 8], [17, 20], [1, 4]]) {
+        sxx += (wl[b].x - wl[a].x) * (lm[b].x - lm[a].x); syy += (wl[b].y - wl[a].y) * (lm[b].y - lm[a].y);
+        szz += (wl[b].z - wl[a].z) * (lm[b].z - lm[a].z); zz += Math.abs((wl[b].z - wl[a].z) * (lm[b].z - lm[a].z));
+      }
+      // z (depth) is only trusted when the hand clearly has depth in both sets; it is averaged over time
+      if (zz > 1e-6) T.handZVote[av] = clamp((T.handZVote[av] || 0) * .9 + Math.sign(szz) * .1, -1, 1);
+      const fx = (sxx < 0) !== CFG.handFlipX ? -1 : 1, fy = syy < 0 ? -1 : 1, fz = ((T.handZVote[av] || 0) < -.3) !== CFG.handFlipZ ? -1 : 1;
+      T.handAxis = { x: fx, y: fy, z: fz };
+      const t = performance.now() / 1000;
+      const w = wl.map((p, j) => oeV(av + 'h' + j, toAv({ x: p.x * fx, y: p.y * fy, z: p.z * fz }), t, CFG.euroMinCutoff * 1.5, CFG.euroBeta));
+      T.handW[av] = w;
+      // finger curls
+      for (const f of FINGERS) {
+        const [a, b, c, d] = FIDX[f], p0 = f === 'Thumb' ? w[1] : w[0];
+        const v0 = f === 'Thumb' ? w[1].clone().sub(w[0]) : w[a].clone().sub(w[0]);
+        const v1 = w[b].clone().sub(w[a]), v2 = w[c].clone().sub(w[b]), v3 = w[d].clone().sub(w[c]);
+        const angs = f === 'Thumb' ? [v0.angleTo(v1) * .5, v1.angleTo(v2), v2.angleTo(v3)] : [v0.angleTo(v1), v1.angleTo(v2), v2.angleTo(v3)];
+        const g = f === 'Thumb' ? CFG.thumbGain : CFG.fingerGain;
+        angs.forEach((ang, k) => { T.curl[av + f + SEGS[k]] = Math.max(0, ang - CFG.curlDeadzone) * g; });
+        void p0;
+      }
+      // palm orientation
+      const M = basis(w[9].clone().sub(w[0]), w[17].clone().sub(w[5]));
+      const R = M.multiply(_m4.copy(RIG.handBasis[av]).transpose());
+      T.arm[av].handRot = (T.arm[av].handRot || new THREE.Quaternion()).setFromRotationMatrix(R);
+    });
+  }
+  for (const s of SIDES) if (!got[s]) { T.arm[s].handRot = null; T.handW[s] = null; for (const f of FINGERS) for (const g of SEGS) T.curl[s + f + g] = 0; }
+}
+
+// ── Motion predictor: α-β tracker per channel ──
+// • keeps a position AND a velocity, so between camera frames (detector ~20–30 fps, render 60+) the pose keeps
+//   moving along its current path instead of stepping;
+// • gating: a measurement that jumps further than a human could move in that time is clipped, and only accepted
+//   once it repeats for `predGateFrames` frames (kills one-frame warps / swapped landmarks);
+// • velocity decays, and look-ahead is capped (predLead) — so a lost track glides to a stop, it doesn't fly off.
+class Track1D {
+  constructor() { this.x = null; this.v = 0; this.t = 0; this.out = 0; }
+  update(z, t, gate) {
+    if (this.x === null || t - this.t > .6) { this.x = z; this.v = 0; this.t = t; this.out = 0; return; }
+    const dt = Math.max(1e-3, t - this.t);
+    const xp = this.x + this.v * dt;
+    let r = z - xp;
+    if (Math.abs(r) > gate) {
+      if (++this.out < CFG.predGateFrames) r = Math.sign(r) * gate * .5;   // suspicious: move only a little toward it
+      else this.out = 0;                                                    // it persists → real motion, accept
+    } else this.out = 0;
+    this.x = xp + CFG.predAlpha * r;
+    this.v = (this.v + CFG.predBeta * r / dt) * Math.exp(-dt * CFG.predDamp);
+    this.t = t;
+  }
+  get(now) {
+    if (this.x === null) return null;
+    const lead = clamp(now - this.t, 0, CFG.predLead);
+    return this.x + this.v * lead * Math.exp(-lead * CFG.predDamp);
+  }
+}
+const PR = new Map();
+function prSet(key, z, t, gate) {
+  if (!CFG.predict) return;
+  let tr = PR.get(key); if (!tr) PR.set(key, tr = new Track1D());
+  tr.update(z, t, gate);
+}
+function prGet(key, fallback, now = performance.now() / 1000) {
+  if (!CFG.predict) return fallback;
+  const v = PR.get(key)?.get(now); return v === null || v === undefined ? fallback : v;
+}
+function prSetV(key, v, t, gate) { prSet(key + 'x', v.x, t, gate); prSet(key + 'y', v.y, t, gate); prSet(key + 'z', v.z, t, gate); }
+function prGetV(key, fallback, now) {
+  if (!CFG.predict || !fallback) return fallback;
+  return new THREE.Vector3(prGet(key + 'x', fallback.x, now), prGet(key + 'y', fallback.y, now), prGet(key + 'z', fallback.z, now));
+}
+// rotate `cur` toward `target` (unit vectors) by the smoothing factor, but never faster than maxRate rad/s
+function stepDir(cur, target, k, maxRate, dt) {
+  const next = cur.clone().lerp(target, k).normalize();
+  const ang = cur.angleTo(next), lim = maxRate * dt;
+  if (ang > lim && ang > 1e-6) {
+    const q = new THREE.Quaternion().setFromUnitVectors(cur, next);
+    next.copy(cur).applyQuaternion(new THREE.Quaternion().slerp(q, lim / ang)).normalize();
+  }
+  return cur.copy(next);
+}
+const stepAng = (cur, target, k, maxRate, dt) => cur + clamp((target - cur) * k, -maxRate * dt, maxRate * dt);
+
+// ── One-Euro filter: steady when still, low lag when moving fast (per scalar, keyed) ──
+class OneEuro {
+  constructor() { this.x = null; this.dx = 0; this.t = 0; }
+  filter(v, t, minCut, beta, dCut = 1) {
+    if (this.x === null) { this.x = v; this.t = t; return v; }
+    const dt = Math.max(1e-3, t - this.t); this.t = t;
+    const a = c => 1 / (1 + 1 / (2 * Math.PI * c * dt));
+    const dx = (v - this.x) / dt; this.dx += a(dCut) * (dx - this.dx);
+    this.x += a(minCut + beta * Math.abs(this.dx)) * (v - this.x);
+    return this.x;
+  }
+}
+const OE = new Map();
+T.handW = { Left: null, Right: null }; T.handAxis = { x: 1, y: 1, z: 1 }; T.handZVote = {};
+function oe(key, v, t, minCut = CFG.euroMinCutoff, beta = CFG.euroBeta) {
+  if (CFG.filter !== 'oneEuro') return v;
+  let f = OE.get(key); if (!f) OE.set(key, f = new OneEuro());
+  return f.filter(v, t, minCut, beta);
+}
+function oeV(key, v, t, minCut, beta) {
+  if (CFG.filter !== 'oneEuro') return v;
+  return v.set(oe(key + 'x', v.x, t, minCut, beta), oe(key + 'y', v.y, t, minCut, beta), oe(key + 'z', v.z, t, minCut, beta));
+}
+
+// ═════════════════════════ demo mode (no camera) ═════════════════════════
+const mouse = { x: .5, y: .5 }, keys = {};
+addEventListener('pointermove', e => { mouse.x = e.clientX / innerWidth; mouse.y = e.clientY / innerHeight; });
+function demo(t) {
+  T.head.yaw = (mouse.x - .5) * 1.1; T.head.pitch = (mouse.y - .5) * .8; T.head.roll = Math.sin(t * .7) * .05; T.head.ok = true;
+  T.torso.yaw = T.head.yaw * .25; T.torso.roll = Math.sin(t * .5) * .04; T.torso.ok = true;
+  T.faceSeen = performance.now();
+  const talk = keys[' '] ? (.55 + .45 * Math.sin(t * 18)) : 0;
+  const vow = 'AIUEO'[Math.floor(t * 4) % 5], hasV = !!AV.morphs.Mouth_A;
+  const on = k => keys[k] ? 1 : 0;
+  Object.assign(T.face, { MouthOpen: hasV ? 0 : talk, Smile_L: on('s'), Smile_R: on('s'), BrowUp_L: on('b'), BrowUp_R: on('b'),
+    BrowInnerUp: on('b') || on('x'), BrowOuterUp_L: on('b'), BrowOuterUp_R: on('b'), EyeHappy_L: on('h'), EyeHappy_R: on('h'),
+    CheekPuff_L: on('p'), CheekPuff_R: on('p'), TongueOut: on('t'), EyeWide_L: on('x'), EyeWide_R: on('x'), MouthPress: on('z'),
+    LookLeft: clamp((mouse.x - .5) * 2, 0, 1), LookRight: clamp((.5 - mouse.x) * 2, 0, 1) });
+  for (const k of 'AIUEO') T.face['Mouth_' + k] = hasV && k === vow ? talk : 0;
+  if (keys.k) T.face.Mouth_U = 1;                                    // K = hold an "U"
+  const autoB = (t % 3.7) < .12 ? 1 : 0;
+  T.face.Blink_L = T.face.Blink_R = keys.e ? 1 : autoB;
+  for (const s of SIDES) {
+    const A = T.arm[s], sx = s === 'Left' ? 1 : -1;
+    if (keys.w) { A.up = new THREE.Vector3(sx * .55, .75, .3).normalize(); A.lo = new THREE.Vector3(sx * .1, 1, .2).normalize(); A.hand = null; }
+    else { A.up = A.lo = A.hand = null; }
+    A.handRot = null;
+    for (const f of FINGERS) for (const g of SEGS) T.curl[s + f + g] = keys.f ? (f === 'Thumb' ? .7 : 1.25) : 0;
+    T.shrug[s] = keys.u ? 1 : (keys.y && s === 'Left') ? 1 : 0;      // U = shrug both, Y = left only
+  }
+  // N = lean forward, Q = lean to the side (as the face-position lean would)
+  T.lean.faceOK = true; T.lean.fp = keys.n ? .35 : 0; T.lean.fs = keys.q ? .25 : 0;
+}
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') { if (e.key === 'Escape') e.target.blur(); return; }
+  keys[e.key.toLowerCase()] = true;
+  const k = e.key.toLowerCase();
+  if (k === 'escape') { if (!keysEl.hidden) toggleKeys(false); else insp.hidden = true; }
+  else if (k === '?' || k === '/' || k === 'f1') { e.preventDefault(); toggleKeys(); }
+  else if (k === 'f' && mode !== 'demo') toggleFS();      // in demo F = make a fist
+  else if (k === 'i' || k === '`') toggleInsp();
+  else if (k === 'c') calibrate();
+  else if (k === 'm') { setCfg('mirror', !CFG.mirror); toast('MIRROR ' + (CFG.mirror ? 'ON' : 'OFF')); }
+  else if (k === 'v') { setCfg('showPip', !CFG.showPip); }
+  else if (k === 'g') { setCfg('scanView', !CFG.scanView); }
+  else if (k === 'o') { setCfg('viewMode', CFG.viewMode === 'possess' ? 'studio' : 'possess'); toast(CFG.viewMode.toUpperCase()); }
+  else if (k === '1' || k === '2' || k === '3') setCfg('camFrame', ['bust', 'half', 'full'][+k - 1]);
+  if (k === ' ') e.preventDefault();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+const FACE_KEYS = ['Blink_L', 'Blink_R', 'EyeWide_L', 'EyeWide_R', 'EyeSquint_L', 'EyeSquint_R', 'EyeHappy_L', 'EyeHappy_R',
+  'BrowUp_L', 'BrowUp_R', 'BrowDown_L', 'BrowDown_R', 'BrowOuterUp_L', 'BrowOuterUp_R', 'BrowInnerUp', 'BrowFurrow',
+  'Smile_L', 'Smile_R', 'Frown_L', 'Frown_R', 'CheekPuff_L', 'CheekPuff_R',
+  'MouthOpen', 'MouthPucker', 'MouthWide', 'MouthLeft', 'MouthRight', 'MouthPress', 'Mouth_A', 'Mouth_I', 'Mouth_U', 'Mouth_E', 'Mouth_O', 'TongueOut',
+  'LookLeft', 'LookRight', 'LookUp', 'LookDown'];
+
+// ═════════════════════════ pose the avatar ═════════════════════════
+const _eq = new THREE.Quaternion(), _e = new THREE.Euler();
+let blinkClock = 0, autoBlinkV = 0;
+function animate(dt, t) {
+  if (!AV.ready) return;
+  const now = performance.now();
+  const kRot = lerpK(CFG.rotSpeed, dt), kArm = lerpK(CFG.armSpeed, dt), kFace = lerpK(CFG.faceSpeed, dt), kBlink = lerpK(CFG.blinkSpeed, dt), kFin = lerpK(CFG.fingerSpeed, dt);
+  // smooth head/torso (decay to neutral when lost)
+  // targets come from the motion predictor (evaluated NOW, between detections), then move no faster than a human can
+  const ns = now / 1000;
+  const hd = T.head.ok ? { yaw: prGet('hy', T.head.yaw, ns), pitch: prGet('hp', T.head.pitch, ns), roll: prGet('hr', T.head.roll, ns) }
+    : { yaw: 0, pitch: 0, roll: 0 };
+  const kHead = T.head.ok ? kRot : kRot * .3;
+  for (const k of ['yaw', 'pitch', 'roll']) S.head[k] = stepAng(S.head[k], clamp(hd[k], -CFG.headLimit, CFG.headLimit), kHead, CFG.maxHeadSpeed, dt);
+  const td = T.torso.ok ? { yaw: prGet('ty', T.torso.yaw, ns), roll: prGet('tr', T.torso.roll, ns) } : { yaw: 0, roll: 0 };
+  for (const k of ['yaw', 'roll']) S.torso[k] = stepAng(S.torso[k], td[k], T.torso.ok ? kRot : kRot * .3, CFG.maxTorsoSpeed, dt);
+
+  resetPose();
+  const H = B('Hips');
+  // hips: rotation from the hip line + root sideways move (decays to neutral when lost)
+  const hk = T.hips.ok ? kRot : kRot * .3;
+  for (const k of ['yaw', 'roll', 'dx']) S.hips[k] += ((T.hips.ok ? T.hips[k] : 0) - S.hips[k]) * hk;
+  const poss = possessActive();
+  ring.visible = !poss;
+  AV.root.scale.setScalar(AV.baseScale * (poss ? CFG.possessScale : 1));
+  if (!poss) S.poss.set(0, 0, 0);
+  AV.root.position.copy(AV.base).add(S.poss);
+  AV.root.position.x += S.hips.dx * CFG.rootMoveGain;   // rootMoveGain 0 = stays in place
+  AV.root.position.y += S.ground;
+  // chest lean: from the spine line when the hips are visible, otherwise from the head position (desk setup)
+  const useHips = (CFG.leanSource === 'auto' || CFG.leanSource === 'hips') && T.lean.hipsOK;
+  const useFace = !useHips && (CFG.leanSource === 'auto' || CFG.leanSource === 'face') && T.lean.faceOK;
+  const LL = CFG.leanLimit;
+  const lp = clamp((useHips ? T.lean.hp : useFace ? T.lean.fp : 0) * CFG.leanPitchGain, -LL, LL);
+  const ls = clamp((useHips ? T.lean.hs : useFace ? T.lean.fs : 0) * CFG.leanSideGain, -LL, LL);
+  S.lean.p += (lp - S.lean.p) * kRot; S.lean.s += (ls - S.lean.s) * kRot;
+  for (const s of SIDES) S.shrug[s] += (T.shrug[s] - S.shrug[s]) * kArm;
+  AV.root.updateMatrixWorld(true);
+  _e.set(0, S.hips.yaw, S.hips.roll, 'YXZ');
+  const hipQ = new THREE.Quaternion().setFromEuler(_e);
+  if (H) rotateWorld(H, hipQ);
+  // torso: spread over spine chain (+ a little sway following the head); relative to the hips when they are tracked
+  const breath = CFG.idleBreath ? Math.sin(t * 1.6) * .012 : 0;
+  _e.set(breath + S.lean.p + S.head.pitch * CFG.swayFromHead * .3, S.torso.yaw + S.head.yaw * CFG.swayFromHead * .3,
+    S.torso.roll * .6 + S.lean.s * .7 + S.head.roll * CFG.swayFromHead * .5, 'YXZ');
+  const torsoQ = new THREE.Quaternion().setFromEuler(_e).multiply(hipQ.clone().invert());
+  // lower spine bends most for lean, upper chest most for twist — spread both over the chain
+  for (const [n, w] of [['Spine', .38], ['Chest', .34], ['UpperChest', .28]]) rotateWorld(B(n), _eq.copy(ID).slerp(torsoQ, w));
+  // shrug: clavicles lift independently (about the forward axis)
+  const rq = AV.root.getWorldQuaternion(new THREE.Quaternion());
+  for (const s of SIDES) {
+    const shB = B(s + 'Shoulder'); if (!shB || Math.abs(S.shrug[s]) < 1e-3) continue;
+    const ax = new THREE.Vector3(0, 0, 1).applyQuaternion(rq);
+    rotateWorld(shB, new THREE.Quaternion().setFromAxisAngle(ax, (s === 'Left' ? 1 : -1) * S.shrug[s] * CFG.shrugMax));
+  }
+  // head: absolute target in world, neck takes a share
+  _e.set(S.head.pitch, S.head.yaw, S.head.roll, 'YXZ');
+  const headQ = new THREE.Quaternion().setFromEuler(_e);
+  const rootQ = AV.root.getWorldQuaternion(new THREE.Quaternion());
+  const desired = rootQ.clone().multiply(headQ).multiply(rootQ.clone().invert()).multiply(RIG.restWorld.get(B('Head')));
+  const headBase = baseWorld(B('Head'), new THREE.Quaternion());
+  const rem = desired.clone().multiply(headBase.invert());
+  rotateWorld(B('Neck'), _eq.copy(ID).slerp(rem, CFG.neckShare));
+  setWorldQuat(B('Head'), desired);
+  void H;
+
+  // arms
+  for (const s of SIDES) {
+    const A = T.arm[s], SA = S.arm[s], sx = s === 'Left' ? 1 : -1;
+    const down = CFG.armDownAngle;
+    const upDef = new THREE.Vector3(sx * Math.sin(Math.PI / 2 - down), -Math.cos(Math.PI / 2 - down), .08).normalize();
+    const loDef = new THREE.Vector3(sx * .12, -1, .18).normalize();
+    const upP = A.up ? prGetV('up' + s, A.up, ns).normalize() : null, loP = A.lo ? prGetV('lo' + s, A.lo, ns).normalize() : null;
+    const upT = upP || upDef, loT = loP || (upP ? upP : loDef);
+    SA.up = stepDir(SA.up || upDef.clone(), upT, kArm, CFG.maxArmSpeed, dt);
+    SA.lo = stepDir(SA.lo || loDef.clone(), loT, kArm, CFG.maxArmSpeed * 1.3, dt);
+    // human elbow: bends at most elbowMax; a forearm folded further than that is a tracking error → clamp it
+    const bend = SA.up.angleTo(SA.lo);
+    if (bend > CFG.elbowMax) {
+      const q = new THREE.Quaternion().setFromUnitVectors(SA.up, SA.lo);
+      SA.lo.copy(SA.up).applyQuaternion(new THREE.Quaternion().slerp(q, CFG.elbowMax / bend)).normalize();
+    }
+    // clavicle follows part of the arm swing (arm down → shoulder drops, arm up → slight shrug); without it the
+    // shoulder stays at T-pose height and the sleeve top bulges like a shoulder pad
+    const shB = B(s + 'Shoulder'), uaB = B(s + 'UpperArm'), laB = B(s + 'LowerArm');
+    if (shB && uaB && laB && CFG.shoulderShare > 0) {
+      const cur = restAim(uaB, laB).clone().applyQuaternion(baseWorld(uaB, new THREE.Quaternion())).normalize();
+      const want = SA.up.clone().applyQuaternion(rootQ).normalize();
+      // scapulohumeral rhythm: above shoulder height the shoulder girdle does ~1/3 of the lift in a real body.
+      // Letting the clavicle take more of a raised arm keeps the shoulder joint's own angle (and the skinning) sane.
+      const elev = Math.asin(clamp(SA.up.y, -1, 1));
+      const share = Math.min(.6, CFG.shoulderShare + CFG.shoulderRaiseExtra * clamp(elev / 1.2, 0, 1));
+      // on top of the shrug already applied (rotateWorld would reset the clavicle to rest first)
+      setWorldQuat(shB, new THREE.Quaternion().slerp(new THREE.Quaternion().setFromUnitVectors(cur, want), share).multiply(shB.getWorldQuaternion(new THREE.Quaternion())));
+    }
+    // upper arm: point at the elbow AND roll so the elbow bends in the same plane as the tracked arm.
+    // Pure shortest-arc aiming left the roll to chance; raised / behind-the-head arms came out rolled up to ~90°,
+    // which twisted the sleeve like a candy wrapper.
+    const upW = SA.up.clone().applyQuaternion(rootQ), loW = SA.lo.clone().applyQuaternion(rootQ);
+    aimBone(uaB, laB, upW);
+    if (uaB && CFG.elbowPlane && RIG.bendAxis[s]) {
+      const cr = new THREE.Vector3().crossVectors(upW, loW), str = clamp(cr.length() / .35, 0, 1);   // how bent (0 = straight)
+      const fallback = new THREE.Vector3().crossVectors(upW, new THREE.Vector3(0, 0, 1).applyQuaternion(rootQ));
+      if (fallback.lengthSq() < 1e-4) fallback.crossVectors(upW, new THREE.Vector3(0, 1, 0));
+      const want = cr.lengthSq() > 1e-6 ? cr.normalize().lerp(fallback.normalize(), 1 - str) : fallback.normalize();
+      SA.bendN = (SA.bendN || want.clone()).lerp(want, kArm).normalize();
+      const cur = RIG.bendAxis[s].clone().applyQuaternion(uaB.getWorldQuaternion(new THREE.Quaternion()));
+      const a1 = cur.addScaledVector(upW, -cur.dot(upW)).normalize(), a2 = SA.bendN.clone().addScaledVector(upW, -SA.bendN.dot(upW)).normalize();
+      if (a1.lengthSq() > .5 && a2.lengthSq() > .5) {
+        const phi = Math.atan2(new THREE.Vector3().crossVectors(a1, a2).dot(upW), a1.dot(a2));
+        setWorldQuat(uaB, new THREE.Quaternion().setFromAxisAngle(upW, phi).multiply(uaB.getWorldQuaternion(new THREE.Quaternion())));
+        // spread the roll: the twist bone at the shoulder takes part of it back, so the sleeve top doesn't wring
+        const tw = B(s + 'UpperArmTwist');
+        if (tw && CFG.upperTwistShare > 0) setWorldQuat(tw, new THREE.Quaternion().setFromAxisAngle(upW, -phi * CFG.upperTwistShare).multiply(tw.getWorldQuaternion(new THREE.Quaternion())));
+      }
+    }
+    aimBone(laB, B(s + 'Hand'), loW);
+    const hand = B(s + 'Hand');
+    if (CFG.handRotFromHand && A.handRot) {
+      S.handRotW[s] += (1 - S.handRotW[s]) * kArm;
+      SA.hq = (SA.hq || A.handRot.clone()).slerp(A.handRot, kArm);
+    } else S.handRotW[s] += (0 - S.handRotW[s]) * kArm;
+    if (A.hand) SA.hand = stepDir(SA.hand || A.hand.clone(), prGetV('hd' + s, A.hand, ns).normalize(), kArm, CFG.maxArmSpeed * 1.5, dt);
+    else if (SA.hand) SA.hand.lerp(SA.lo, kArm).normalize();
+    if (SA.hand) aimBone(hand, B(s + 'MiddleProximal'), SA.hand.clone().applyQuaternion(rootQ));
+    if (S.handRotW[s] > .01 && SA.hq) {
+      const want = rootQ.clone().multiply(SA.hq).multiply(rootQ.clone().invert()).multiply(RIG.restWorld.get(hand));
+      const cur = hand.getWorldQuaternion(new THREE.Quaternion());
+      setWorldQuat(hand, cur.slerp(want, S.handRotW[s]));
+    }
+    // arms rest ON the body instead of passing through it
+    if (CFG.armCollide) resolveArmCollision(s);
+    // forearm twist bone takes part of the wrist roll (less candy-wrapper at the cuff)
+    const twB = B(s + 'LowerArmTwist');
+    if (twB && laB && S.handRotW[s] > .01 && CFG.twistShare > 0) {
+      const axis = worldPos(hand).sub(worldPos(laB)).normalize();
+      const d = hand.getWorldQuaternion(new THREE.Quaternion()).multiply(baseWorld(hand, new THREE.Quaternion()).invert());
+      const pr = axis.multiplyScalar(axis.dot(new THREE.Vector3(d.x, d.y, d.z)));
+      const twist = new THREE.Quaternion(pr.x, pr.y, pr.z, d.w).normalize();
+      rotateWorld(twB, new THREE.Quaternion().slerp(twist, CFG.twistShare));
+    }
+    // fingers: 'aim' = every joint points along the tracked landmarks (bend + spread + thumb), 'curl' = bend only
+    const hw = T.handW[s];
+    const aimFingers = CFG.fingerMode === 'aim' && hw && S.handRotW[s] > .5;
+    for (const f of FINGERS) {
+      const idx = FIDX[f];
+      for (let k = 0; k < 3; k++) {
+        const n = s + f + SEGS[k], bone = B(n), ax = RIG.finger[n]; if (!bone || !ax) continue;
+        if (aimFingers) {
+          const want = hw[idx[k + 1]].clone().sub(hw[idx[k]]).applyQuaternion(rootQ).normalize();
+          S.fdir[n] = (S.fdir[n] || want.clone()).lerp(want, kFin).normalize();
+          const child = k < 2 ? B(s + f + SEGS[k + 1]) : null;
+          if (child) aimBone(bone, child, S.fdir[n]);
+          else aimVec(bone, RIG.tipDir.get(bone), S.fdir[n]);
+          S.curl[n] = 0;
+        } else {
+          S.fdir[n] = null;
+          S.curl[n] = (S.curl[n] || 0) + ((T.curl[n] || 0) - (S.curl[n] || 0)) * kFin;
+          bone.quaternion.copy(AV.rest.get(bone).q).multiply(_eq.setFromAxisAngle(ax, S.curl[n] * (CFG.fingerFlip ? -1 : 1)));
+          bone.updateMatrixWorld(true);
+        }
+      }
+    }
+  }
+  // legs: thigh → knee → ankle → toes follow the pose; untracked legs ease back to rest (relative to the hips)
+  let legsTracked = false;
+  for (const s of SIDES) {
+    const L = T.leg[s], SL = S.leg[s];
+    const ul = B(s + 'UpperLeg'), ll = B(s + 'LowerLeg'), ft = B(s + 'Foot'), to = B(s + 'Toes');
+    if (!ul || !ll || !ft) continue;
+    const inv = rootQ.clone().invert();
+    const restDir = (b, c) => restAim(b, c).clone().applyQuaternion(baseWorld(b, new THREE.Quaternion())).applyQuaternion(inv).normalize();
+    const kL = lerpK(CFG.legSpeed, dt);
+    const tUp = L.up || restDir(ul, ll);
+    SL.up = (SL.up || tUp.clone()).lerp(tUp, kL).normalize();
+    aimBone(ul, ll, SL.up.clone().applyQuaternion(rootQ));
+    const tLo = L.lo || restDir(ll, ft);
+    SL.lo = (SL.lo || tLo.clone()).lerp(tLo, kL).normalize();
+    aimBone(ll, ft, SL.lo.clone().applyQuaternion(rootQ));
+    if (to) {
+      const tFt = L.ft || restDir(ft, to);
+      SL.ft = (SL.ft || tFt.clone()).lerp(tFt, kL).normalize();
+      aimBone(ft, to, SL.ft.clone().applyQuaternion(rootQ));
+    }
+    if (L.up) legsTracked = true;
+  }
+  // grounding: keep the lowest foot on the floor (crouch, one-leg lift); off when the legs are not seen
+  AV.root.updateMatrixWorld(true);
+  let want = 0;
+  if (CFG.grounding && legsTracked) {
+    let low = Infinity;
+    for (const n of ['LeftFoot', 'RightFoot', 'LeftToes', 'RightToes']) { const b = B(n); if (b) low = Math.min(low, worldPos(b).y); }
+    if (low < Infinity) want = clamp(S.ground + (AV.restLow - low), -1.2, .3);
+  }
+  S.ground += (want - S.ground) * lerpK(CFG.legSpeed * .6, dt);
+  AV.root.updateMatrixWorld(true);
+  // possession: slide the whole avatar so its head sits where the user's head is in camera space
+  if (poss && T.head.ok && T.facePos) {
+    const hb = B('Head');
+    const hRot = hb.getWorldQuaternion(new THREE.Quaternion()).multiply(RIG.restWorld.get(hb).clone().invert());
+    const want = prGetV('fpos', T.facePos, ns).add(new THREE.Vector3(0, CFG.faceToHeadY, CFG.faceToHeadZ).applyQuaternion(hRot));
+    const d = want.sub(worldPos(hb));
+    const k = S.possInit ? lerpK(CFG.possessSpeed, dt) : 1; S.possInit = true;
+    S.poss.addScaledVector(d, k); AV.root.position.addScaledVector(d, k);
+    AV.root.updateMatrixWorld(true);
+  }
+  stepHair(dt);
+  AV.root.updateMatrixWorld(true);
+
+  // face
+  const faceLost = now - T.faceSeen > 400;
+  if (faceLost && CFG.autoBlink && mode === 'cam') {
+    blinkClock -= dt; if (blinkClock < 0) { blinkClock = 2.5 + Math.random() * 3; autoBlinkV = .14; }
+    autoBlinkV = Math.max(0, autoBlinkV - dt);
+  }
+  // mic lipsync adds on top of the camera mouth (whichever is bigger)
+  readMic();
+  const micMouth = {};
+  if (MIC.vol > .02) {
+    if (AV.morphs.Mouth_A) for (const k of 'AIUEO') micMouth['Mouth_' + k] = MIC.vol * MIC.w[k] * (k === 'A' ? 1.2 : 1.6);
+    else micMouth.MouthOpen = MIC.vol;
+  }
+  for (const n of FACE_KEYS) {
+    let tv = faceLost && mode === 'cam' ? 0 : (T.face[n] || 0);
+    if (micMouth[n] !== undefined) tv = Math.max(tv, clamp(micMouth[n], 0, 1));
+    if (faceLost && n.startsWith('Blink') && autoBlinkV > 0) tv = 1;
+    const isBlink = n.startsWith('Blink');
+    // response curve: small real movements read clearly (x^curve, curve < 1), expressive keys may overshoot to faceMax
+    const loose = !isBlink && !n.startsWith('Look') && !n.startsWith('EyeHappy') && n !== 'TongueOut';
+    if (loose && tv > 0) tv = Math.min(CFG.faceMax, Math.pow(tv, CFG.faceCurve) * CFG.faceBoost);
+    const x0 = S.face[n] || 0;
+    if (CFG.faceSpring && loose) {
+      // under-damped spring (ζ < 1): the face pops into an expression and settles, like hand-keyed anime timing
+      const w = 2 * Math.PI * CFG.faceSpringHz, z = CFG.faceSpringDamp;
+      let x = x0, v = S.faceV[n] || 0;
+      const steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+      for (let i = 0; i < steps; i++) { const h = dt / steps; v += (w * w * (tv - x) - 2 * z * w * v) * h; x += v * h; }
+      S.faceV[n] = v; S.face[n] = clamp(x, -.08, CFG.faceMax + .1);
+    } else {
+      S.face[n] = x0 + (tv - x0) * (isBlink ? kBlink : kFace); S.faceV[n] = 0;
+    }
+    setMorph(n, Math.max(0, S.face[n]));
+  }
+  // iris cards slide back behind the lids only at the end of a blink / happy-eye (never at half-blink)
+  for (const s of ['L', 'R']) setMorph('IrisHide_' + s, Math.max(remap(S.face['Blink_' + s] || 0, .8, 1), remap(S.face['EyeHappy_' + s] || 0, .6, 1)));
+  // eye-closing helpers on separate meshes
+  setMorphOn('Lash_L', 'Closed', S.face.Blink_L); setMorphOn('Lash_R', 'Closed', S.face.Blink_R);
+}
+
+// ═════════════════════════ background: remove the real person ═════════════════════════
+// The selfie segmenter gives a person-confidence mask. Wherever the mask says "room", that pixel is learned into a
+// clean plate (running average). Where the person is, the clean plate is shown instead — so when you move, the room
+// behind you appears. Pixels never seen yet fall back to a heavily blurred frame. 'blur' mode just blurs the person.
+const SEG = { mask: null, mw: 0, mh: 0, t: 0, W: 0, H: 0, plate: null, known: null, work: null, wctx: null, blr: null, bctx: null, out: null, octx: null };
+function updateBackground() {
+  if (!possessActive() || !(CFG.possessBg === 'clean' || CFG.possessBg === 'blur') || !SEG.mask) return;
+  const va = video.videoWidth / video.videoHeight, W = 320, H = Math.round(W / va);
+  if (SEG.W !== W || SEG.H !== H) {
+    Object.assign(SEG, { W, H, plate: new Float32Array(W * H * 3), known: new Float32Array(W * H) });
+    const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+    SEG.work = mk(); SEG.wctx = SEG.work.getContext('2d', { willReadFrequently: true });
+    SEG.blr = mk(); SEG.bctx = SEG.blr.getContext('2d', { willReadFrequently: true });
+    const out = document.getElementById('bg'); out.width = W; out.height = H; SEG.octx = out.getContext('2d');
+    SEG.img = SEG.octx.createImageData(W, H);
+  }
+  SEG.wctx.drawImage(video, 0, 0, W, H);
+  const px = SEG.wctx.getImageData(0, 0, W, H).data;
+  SEG.bctx.filter = 'blur(10px)'; SEG.bctx.drawImage(video, 0, 0, W, H); SEG.bctx.filter = 'none';
+  const bl = SEG.bctx.getImageData(0, 0, W, H).data;
+  const { mask, mw, mh, plate, known } = SEG, o = SEG.img.data, clean = CFG.possessBg === 'clean';
+  const sx = mw / W, sy = mh / H;
+  const ms = (x, y) => mask[Math.min(mh - 1, Math.max(0, y | 0)) * mw + Math.min(mw - 1, Math.max(0, x | 0))];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, p = i * 4, q = i * 3;
+    // slightly dilated mask (max of a small cross) so hair edges / fingertips are covered too
+    const mx = x * sx, my = y * sy, d = 3 * sx;
+    const m = Math.max(ms(mx, my), ms(mx - d, my), ms(mx + d, my), ms(mx, my - d), ms(mx, my + d));
+    if (m < .2) {                                            // room pixel → learn it
+      const a = known[i] > 0 ? .12 : 1;
+      plate[q] += (px[p] - plate[q]) * a; plate[q + 1] += (px[p + 1] - plate[q + 1]) * a; plate[q + 2] += (px[p + 2] - plate[q + 2]) * a;
+      known[i] = 1;
+    }
+    const w = clamp((m - .3) / .4, 0, 1), ws = w * w * (3 - 2 * w);
+    let r, g, b;
+    if (clean && known[i] > 0) { r = plate[q]; g = plate[q + 1]; b = plate[q + 2]; }
+    else { r = bl[p]; g = bl[p + 1]; b = bl[p + 2]; }
+    o[p] = px[p] + (r - px[p]) * ws; o[p + 1] = px[p + 1] + (g - px[p + 1]) * ws; o[p + 2] = px[p + 2] + (b - px[p + 2]) * ws; o[p + 3] = 255;
+  }
+  SEG.octx.putImageData(SEG.img, 0, 0);
+}
+
+// ═════════════════════════ scan view: what the trackers see, in 3D ═════════════════════════
+const scanBox = document.getElementById('scanBox');
+let SCAN = null, VISION = null;
+function initScan() {
+  if (SCAN || !VISION) return;
+  const r = new THREE.WebGLRenderer({ canvas: document.getElementById('scan'), antialias: true, alpha: true });
+  r.setPixelRatio(1); r.setSize(600, 600, false);
+  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, 1, .01, 20);
+  cam.position.set(0, .25, 2.7); cam.lookAt(0, .2, 0);
+  const g = new THREE.Group(); sc.add(g);
+  const grid = new THREE.GridHelper(2, 12, 0x333333, 0x1c1c1c); grid.position.y = -.95; g.add(grid);
+  const lines = (n, pairs, color, op = 1) => {
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    geo.setIndex(pairs.flatMap(c => [c.start, c.end]));
+    const l = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color, transparent: op < 1, opacity: op })); l.frustumCulled = false; g.add(l); return l;
+  };
+  const points = (geo, color, size) => { const p = new THREE.Points(geo, new THREE.PointsMaterial({ color, size, sizeAttenuation: true })); p.frustumCulled = false; g.add(p); return p; };
+  const face = lines(478, VISION.FaceLandmarker.FACE_LANDMARKS_TESSELATION, 0x5b6cff, .75);
+  const facePts = points(face.geometry, 0x8fa8ff, .008);
+  const pose = lines(33, VISION.PoseLandmarker.POSE_CONNECTIONS, 0xffffff);
+  const poseJ = points(pose.geometry, 0xffd36b, .035);
+  const hands = [0, 1].map(() => lines(21, VISION.HandLandmarker.HAND_CONNECTIONS, 0xffd36b));
+  SCAN = { r, sc, cam, g, face, facePts, pose, poseJ, hands };
+}
+const _sv = new THREE.Vector3(), _sv2 = new THREE.Vector3();
+function updateScan(t) {
+  if (!SCAN || scanBox.hidden) return;
+  const { face, facePts, pose, poseJ, hands } = SCAN;
+  const pw = lastPose?.worldLandmarks?.[0];
+  pose.visible = poseJ.visible = !!pw;
+  let head = new THREE.Vector3(0, .6, 0);
+  if (pw) {
+    const a = pose.geometry.attributes.position;
+    pw.forEach((p, i) => { toAv(p, 1, _sv); a.setXYZ(i, _sv.x, _sv.y, _sv.z); });
+    a.needsUpdate = true; head = toAv(pw[0], 1, new THREE.Vector3());
+  }
+  // face mesh: image-space landmarks around the nose tip, scaled to ~15 cm cheek-to-cheek, placed on the pose head
+  const fl = lastFace?.faceLandmarks?.[0];
+  face.visible = !!fl && CFG.scanFaceMesh; facePts.visible = !!fl && !CFG.scanFaceMesh;
+  if (fl) {
+    const W = video.videoWidth || 640, H = video.videoHeight || 480;
+    const px = p => _sv2.set(p.x * W, p.y * H, p.z * W);
+    // (px() returns a shared vector → clone before comparing two landmarks; this made the mesh explode)
+    const nose = px(fl[1]).clone(), cheek = px(fl[234]).clone().distanceTo(px(fl[454])) || 1, s = .15 / cheek;
+    const a = face.geometry.attributes.position;
+    fl.forEach((p, i) => {
+      px(p).sub(nose).multiplyScalar(s);
+      a.setXYZ(i, head.x + (CFG.mirror ? -1 : 1) * _sv2.x, head.y - _sv2.y, head.z - _sv2.z);
+    });
+    a.needsUpdate = true;
+  }
+  // hands: world landmarks (metres around the hand centre) moved onto the matching pose wrist
+  hands.forEach(h => h.visible = false);
+  if (lastHands?.worldLandmarks && pw) {
+    const pn = lastPose.landmarks[0];
+    lastHands.worldLandmarks.forEach((hw, i) => {
+      if (i > 1) return;
+      const l0 = lastHands.landmarks[i][0], d = k => Math.hypot(pn[k].x - l0.x, pn[k].y - l0.y);
+      const wrist = toAv(pw[d(15) < d(16) ? 15 : 16], 1, new THREE.Vector3());
+      const off = wrist.clone().sub(toAv(hw[0], 1, _sv));
+      const a = hands[i].geometry.attributes.position;
+      hw.forEach((p, j) => { toAv(p, 1, _sv).add(off); a.setXYZ(j, _sv.x, _sv.y, _sv.z); });
+      a.needsUpdate = true; hands[i].visible = true;
+    });
+  }
+  SCAN.g.rotation.y = Math.sin(t * .35) * .55;              // slow turn so the depth reads
+  SCAN.r.render(SCAN.sc, SCAN.cam);
+}
+
+// ═════════════════════════ webcam preview ═════════════════════════
+const POSE_LINES = [[11, 12], [11, 13], [13, 15], [12, 14], [14, 16], [11, 23], [12, 24], [23, 24]];
+function drawPip() {
+  if (pip.hidden || video.readyState < 2) return;
+  const W = pip.width, Hh = pip.height;
+  pctx.save();
+  if (CFG.mirror) { pctx.translate(W, 0); pctx.scale(-1, 1); }
+  pctx.globalAlpha = .55; pctx.drawImage(video, 0, 0, W, Hh); pctx.globalAlpha = 1;
+  const P = p => [p.x * W, p.y * Hh];
+  if (lastPose?.landmarks?.[0]) {
+    const l = lastPose.landmarks[0]; pctx.strokeStyle = '#fff'; pctx.lineWidth = 1.5; pctx.beginPath();
+    for (const [a, b] of POSE_LINES) { if ((l[a].visibility ?? 1) < .4 || (l[b].visibility ?? 1) < .4) continue; pctx.moveTo(...P(l[a])); pctx.lineTo(...P(l[b])); }
+    pctx.stroke();
+  }
+  if (lastFace?.faceLandmarks?.[0]) {
+    const f = lastFace.faceLandmarks[0];
+    if (VISION && CFG.scanFaceMesh) {                      // full tesselation over the face, like a scan
+      pctx.strokeStyle = 'rgba(91,108,255,.7)'; pctx.lineWidth = .6; pctx.beginPath();
+      for (const c of VISION.FaceLandmarker.FACE_LANDMARKS_TESSELATION) { pctx.moveTo(...P(f[c.start])); pctx.lineTo(...P(f[c.end])); }
+      pctx.stroke();
+    } else { pctx.fillStyle = '#8fa8ff'; for (let i = 0; i < f.length; i += 6) { const [x, y] = P(f[i]); pctx.fillRect(x, y, 1.5, 1.5); } }
+  }
+  if (lastHands?.landmarks) {
+    pctx.strokeStyle = '#ffd36b'; pctx.lineWidth = 1.2; pctx.beginPath();
+    for (const h of lastHands.landmarks) for (const c of (VISION?.HandLandmarker.HAND_CONNECTIONS || [])) { pctx.moveTo(...P(h[c.start])); pctx.lineTo(...P(h[c.end])); }
+    pctx.stroke();
+  }
+  pctx.restore();
+}
+
+// ═════════════════════════ HUD + loop ═════════════════════════
+const hud = document.getElementById('hud');
+const bars = document.getElementById('bars'); bars.hidden = !CFG.showFaceBars;
+let last = performance.now(), fps = 0, hudT = 0;
+function loop() {
+  requestAnimationFrame(loop);
+  const now = performance.now(), dt = Math.min(.1, (now - last) / 1000); last = now;
+  fps += (1 / Math.max(dt, 1e-3) - fps) * .05;
+  const t = now / 1000;
+  if (mode === 'cam') detect(); else if (mode === 'demo') demo(t);
+  animate(dt, t);
+  if (!possessActive()) controls.update();
+  updateKeyLight();
+  updateDQS();
+  renderer.render(scene, camera);
+  drawPip();
+  updateScan(t);
+  updateBackground();
+  if ((hudT += dt) > .2) {
+    hudT = 0;
+    const dot = (ok) => ok ? '<b>●</b>' : '○';
+    const age = x => now - x < 500;
+    hud.innerHTML = `AVATAR / TRACK\n${mode.toUpperCase()} · ${fps.toFixed(0)} FPS` + (mode === 'cam' ? ` · ${detMs.toFixed(0)}MS` : '') +
+      `\nFACE ${dot(age(T.faceSeen))}  POSE ${dot(age(T.poseSeen))}\nHAND L ${dot(age(T.handSeen.Left))}  R ${dot(age(T.handSeen.Right))}` +
+      `\nMIRROR ${CFG.mirror ? 'ON' : 'OFF'}` + (CFG.tongueDetect && mode === 'cam' ? `\nTONGUE raw ${T.tongueRaw.toFixed(3)} → ${T.tongue.toFixed(2)}` : '') +
+      (MIC.on && CFG.micLipsync ? `\nMIC ${(MIC.vol * 100).toFixed(0)}` : '') +
+      (mode === 'cam' && (T.handSeen.Left || T.handSeen.Right) ? `\nHAND AXIS x${T.handAxis.x > 0 ? '+' : '−'} y${T.handAxis.y > 0 ? '+' : '−'} z${T.handAxis.z > 0 ? '+' : '−'}` : '') +
+      (mode === 'demo' ? `\n\nเมาส์ = หัน · SPACE = พูด (สระวน)\nS = ยิ้ม · B = คิ้ว · E = หลับตา · H = ตายิ้ม\nP = แก้มพอง · T = แลบลิ้น · X = ตาโต\nW = ยกแขน · F = กำมือ\nU = ยักไหล่ · Y = ยักไหล่ซ้าย · N = โน้มหน้า · Q = เอียงตัว\nK = ปาก U · Z = เม้มปาก` : '');
+    if (!bars.hidden) {
+      bars.innerHTML = FACE_KEYS.map(n => {
+        const v = S.face[n] || 0, ok = !!AV.morphs[n];
+        return `<div class="b${ok ? '' : ' off'}"><span>${n}</span><i><u style="width:${(v * 100).toFixed(0)}%"></u></i><span>${v.toFixed(2)}</span></div>`;
+      }).join('');
+    }
+  }
+}
+loop();
+window.__dbg = { AV, T, S, RIG, CFG, keys, THREE, camera, controls, setCfg, renderer, scene, SEG, PR, updateBackground, prSet, prGet, BODY, pushOutOfBody, HAIR,
+  // test hook: feed fake tracker results into the scan view (no camera needed)
+  // test hook for possession: fake a camera (size only) + a face position/rotation
+  possessTest(vw, vh, facePos) { mode = 'cam'; document.getElementById('intro').hidden = true;
+    Object.defineProperty(video, 'videoWidth', { value: vw, configurable: true }); Object.defineProperty(video, 'videoHeight', { value: vh, configurable: true });
+    resize(); T.facePos = facePos; T.head.ok = true; T.faceSeen = performance.now(); return possessActive(); },
+  feed(pose, hands) { mode = 'feed'; document.getElementById('intro').hidden = true; lastPose = pose; lastHands = hands; readPose(pose); readHands(hands, pose); T.poseSeen = performance.now(); },
+  fakeScan(vision, face, pose, hands) { VISION = vision; initScan(); scanBox.hidden = false; lastFace = face; lastPose = pose; lastHands = hands; updateScan(1); return !!SCAN; } };
+
+// ═════════════════════════ boot ═════════════════════════
+const goCam = document.getElementById('goCam'), goDemo = document.getElementById('goDemo');
+goCam.onclick = () => startCam().catch(camError);
+goDemo.onclick = () => { mode = 'demo'; document.getElementById('intro').hidden = true; toast('DEMO · ไม่มีกล้อง'); };
+// ?autostart=1 (the site's inline player): open the camera as soon as the model is in, no intro click
+const AUTOSTART = new URLSearchParams(location.search).get('autostart') === '1';
+let autoStarted = false;
+function ready() {
+  goCam.disabled = goDemo.disabled = false; statusEl.textContent = 'โมเดลพร้อม · ' + Object.keys(AV.morphs).length + ' shape keys · ' + Object.keys(AV.bones).length + ' bones';
+  if (AUTOSTART && !autoStarted) {
+    autoStarted = true; statusEl.textContent = 'กำลังเปิดกล้อง… กด "อนุญาต" ถ้าเบราว์เซอร์ถาม';
+    startCam().catch(camError);
+  }
+}
+const pickLbl = document.getElementById('pickLbl');
+async function loadFile(file) {
+  const url = URL.createObjectURL(file);
+  try { await loadAvatar(url); ready(); pickLbl.hidden = true; } catch (e) { statusEl.textContent = 'โหลดไฟล์ไม่ได้: ' + e.message; }
+}
+document.getElementById('pick').onchange = e => e.target.files[0] && loadFile(e.target.files[0]);
+addEventListener('dragover', e => e.preventDefault());
+addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+loadAvatar(MODELS[CFG.model] || MODELS.sheep).then(ready).catch(e => {
+  console.warn(e);
+  statusEl.textContent = location.protocol === 'file:' ? 'เปิดผ่าน file:// โหลด GLB เองไม่ได้ → ดับเบิลคลิก serve.bat หรือเลือก/ลากไฟล์ .glb มาวาง' : 'โหลดโมเดลไม่ได้: ' + e.message;
+  pickLbl.hidden = false;
+});
+</script>
+</body>
+</html>

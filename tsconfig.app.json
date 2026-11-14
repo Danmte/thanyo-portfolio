@@ -11,6 +11,8 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
+    /* the real file per edition is picked in vite.config.ts; types come from the portfolio file */
+    "paths": { "@content/site.json": ["./src/content/site.json"] },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -23,5 +25,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src", "home/src"]
 }

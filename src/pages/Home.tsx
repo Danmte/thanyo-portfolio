@@ -9,6 +9,7 @@ import { Lightbox } from '../components/Lightbox'
 import { Icon } from '../components/Icon'
 import { scrollToSection } from '../components/Layout'
 import { sfx } from '../lib/sfx'
+import { isPersonal } from '../content/edition'
 
 export function SectionHead({ id, link }: { id: 'works' | 'studio' | 'gallery' | 'about' | 'contact'; link?: { label: string; to: string } }) {
   return (
@@ -102,6 +103,7 @@ function Works() {
                 <Link to={`/work/${w.id}`}><h3>{w.title}</h3></Link>
                 <p className="muted">{w.genre}</p>
                 <div className="chips"><StatusTag w={w} /></div>
+                {w.demo && <Link className="btn primary" to={`/work/${w.id}?play=1`} style={{ marginTop: 12, height: 36, padding: '0 14px', fontSize: 13 }}>▶ กดเล่น · เปิดกล้อง</Link>}
               </div>
               <ItemTools list={['works']} index={n + 1} title={w.title} />
             </article>
@@ -172,9 +174,9 @@ function About() {
           </blockquote>
           <div className="statement">{ab.statement.map((_, i) => <T key={i} path={['about', 'statement', i]} as="p" multiline />)}</div>
           <div className="about-cols">
-            <div><h4>Software & Skills</h4><div className="chips">{ab.skills.map((s) => <em key={s} className="tag">{s}</em>)}</div></div>
-            <div><h4>การศึกษา</h4><ul className="edu">{ab.education.map((e, i) => <li key={i}><b>{e.school}</b><small>{e.years}</small></li>)}</ul></div>
-            <div><h4>งานอดิเรก</h4><div className="chips">{ab.hobbies.map((s) => <em key={s} className="tag soft">{s}</em>)}</div></div>
+            {ab.skills.length > 0 && <div><h4>Software & Skills</h4><div className="chips">{ab.skills.map((s) => <em key={s} className="tag">{s}</em>)}</div></div>}
+            {ab.education.length > 0 && <div><h4>การศึกษา</h4><ul className="edu">{ab.education.map((e, i) => <li key={i}><b>{e.school}</b><small>{e.years}</small></li>)}</ul></div>}
+            {ab.hobbies.length > 0 && <div><h4>{isPersonal ? 'ชอบทำ' : 'งานอดิเรก'}</h4><div className="chips">{ab.hobbies.map((s) => <em key={s} className="tag soft">{s}</em>)}</div></div>}
           </div>
         </div>
       </div>

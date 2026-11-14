@@ -3,5 +3,8 @@
 const previews = new Map<string, string>()
 export const addPreview = (path: string, file: Blob) => { previews.set(path, URL.createObjectURL(file)) }
 
+// Offline build (opened from file://): models are embedded as data: URLs by offline.plugin.ts
+const embedded = (globalThis as { __MODELS?: Record<string, string> }).__MODELS ?? {}
+
 /** Resolve a file inside /public so it works on any hosting base path (data:/blob:/http URLs pass through). */
-export const asset = (path: string) => previews.get(path) ?? (/^(data:|blob:|https?:)/.test(path) ? path : import.meta.env.BASE_URL + path.replace(/^\//, ''))
+export const asset = (path: string) => previews.get(path) ?? embedded[path] ?? (/^(data:|blob:|https?:)/.test(path) ? path : import.meta.env.BASE_URL + path.replace(/^\//, ''))

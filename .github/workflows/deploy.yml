@@ -26,7 +26,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      # portfolio → dist/ (site root) · personal → dist/me/ (…/me/) · kmitl → dist/kmitl/ (…/kmitl/)
+      - run: npm run build:all
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

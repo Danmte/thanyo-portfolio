@@ -31,6 +31,16 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font: 'Inter', 'IBM Plex Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
+/* personal edition (npm run dev:personal / build:personal): warmer paper + coral accent */
+:root[data-edition='personal'] {
+  --bg: #f4efe9;
+  --surface-2: #faf6f1;
+  --line: #e6ddd3;
+  --accent: #e8664f;
+  --accent-soft: #fde4dc;
+  --paccent: rgba(232, 102, 79, 0.24);
+  --paccent-text: #ffc2b5;
+}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }

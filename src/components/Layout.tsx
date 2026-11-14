@@ -5,7 +5,6 @@ import { useSite } from '../content/store'
 import { EditBar, EditBlock, FormDrawer, T } from '../content/Editable'
 import { Icon } from './Icon'
 import { toggleMute, useMuted } from '../lib/sfx'
-
 export function scrollToSection(id: string) {
   const el = document.getElementById(id)
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })

@@ -1,4 +1,4 @@
-import seed from './site.json'
+import seed from '@content/site.json'
 
 export type Tone = 'blue' | 'green' | 'amber' | 'violet' | 'gray'
 export type Point = { title: string; code: string; body: string }
@@ -6,6 +6,8 @@ export type Work = {
   id: string; number: string; title: string; subtitle: string; status: string; tone: Tone | string
   genre: string; duration: string; role: string; team: string; summary: string
   cover: string; images: string[]; video: string; software: string[]; points: Point[]
+  /** Playable page inside /public (e.g. "avatar/index.html?from=site"): the work page plays it in place of the cover. */
+  demo?: string
 }
 export type Art = { id: string; title: string; category: string; tools: string; note: string; image: string; pixel: boolean }
 export type Spec = { label: string; value: string }
@@ -47,7 +49,7 @@ export const seedSite = seed as Site
 
 /** Templates for "add new item" in the editor. */
 export const blank = {
-  work: (): Work => ({ id: `work-${Date.now()}`, number: '', title: 'ผลงานใหม่', subtitle: '', status: 'In development', tone: 'blue', genre: '', duration: '', role: '', team: '', summary: '', cover: '', images: [], video: '', software: [], points: [] }),
+  work: (): Work => ({ id: `work-${Date.now()}`, number: '', title: 'ผลงานใหม่', subtitle: '', status: 'In development', tone: 'blue', genre: '', duration: '', role: '', team: '', summary: '', cover: '', images: [], video: '', demo: '', software: [], points: [] }),
   art: (): Art => ({ id: `art-${Date.now()}`, title: 'ภาพใหม่', category: 'Illustration', tools: '', note: '', image: '', pixel: false }),
   model: (): Model3D => ({ id: `model-${Date.now()}`, kind: 'Character', name: 'โมเดลใหม่', title: '', description: '', model: '', thumb: '', height: 1.8, lift: 0, spin: false, clips: [], defaultClip: '', specs: [], tools: [] }),
   contact: (): Contact => ({ label: 'Link', value: '', url: '' }),
